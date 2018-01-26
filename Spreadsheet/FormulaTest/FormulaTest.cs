@@ -14,17 +14,13 @@ namespace FormulaTest
         string pNumber = @"(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?";
 
         [TestMethod]
-        public void MatchThis() //num, var, open
+        public void MatchTest() //num, var, open
         {
-            Assert.IsTrue(Formula.MatchThese("42", pNumber));
-            Assert.IsTrue(Formula.MatchThese("4324 789342 7894323", pNumber));
+            Formula f = new Formula("0");
+            PrivateObject fTest = new PrivateObject(f);
+            object[] parameters = { "(", pNumber, pVariable, pOpen };
 
-            Assert.IsTrue(Formula.MatchThese("var", pVariable));
-            Assert.IsTrue(Formula.MatchThese("adam is a person", pVariable));
-            Assert.IsTrue(Formula.MatchThese("var", pVariable));
-
-            Assert.IsTrue(Formula.MatchThese("(", pOpen));
-            Assert.IsTrue(Formula.MatchThese("  (a  ", pOpen));
+            Assert.IsTrue((bool)fTest.Invoke("MatchThese", parameters));
         }
 
         [TestMethod]
@@ -51,7 +47,7 @@ namespace FormulaTest
         [TestMethod]
         public void Syntax4()
         {
-            Formula f = new Formula("4(x) + (y * 2)");
+            Formula f = new Formula("4 * x + (y * 2)");
         }
 
         [TestMethod]
@@ -86,6 +82,48 @@ namespace FormulaTest
         public void EqualPs()
         {
             Formula f = new Formula("(3 + 4) + (a + (b + c))");
+        }
+
+        [TestMethod]
+        public void Begin()
+        {
+            Formula f = new Formula("a + 5");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void End()
+        {
+            Formula f = new Formula("5 + a +");
+        }
+
+        [TestMethod]
+        public void ProvidedValid()
+        {
+            Formula f = new Formula("2.5e9 + x5 / 17");
+            Formula g = new Formula("(5 * 2) + 8");
+            Formula h = new Formula("x*y-2+35/9");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void ProvidedInvalid1()
+        {
+            Formula f = new Formula("_");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void ProvidedInvalid2()
+        {
+            Formula f = new Formula("-5.3");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void ProvidedInvalid3()
+        {
+            Formula f = new Formula("2 5 + 3");
         }
     }
 

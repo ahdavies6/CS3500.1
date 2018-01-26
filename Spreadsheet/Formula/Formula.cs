@@ -91,30 +91,33 @@ namespace Formulas
                                 "than opening parenthesis, reading left to right.");
                         }
                     }
-                    // Any token immediately following an opening parenthesis or operator must be
-                    // a number, variable, or opening parenthesis
-                    //if (Regex.IsMatch(tokens[i], @"[\+\-*/\(]"))
-                    if (MatchThese(tokens[i], pOpen, pOperator))
-                    {
-                        //if (Regex.IsMatch(tokens[i+1], @"[\+\-*/\)]"))
-                        if (!MatchThese(tokens[i + 1], pNumber, pVariable, pOpen))
+                    if (i < tokens.Count - 1)
                         {
-                            throw new FormulaFormatException(
-                                "Any token immediately following an opening parenthesis or operator" +
-                                "a number, variable, or opening parenthesis.");
+                        // Any token immediately following an opening parenthesis or operator must be
+                        // a number, variable, or opening parenthesis
+                        //if (Regex.IsMatch(tokens[i], @"[\+\-*/\(]"))
+                        if (MatchThese(tokens[i], pOpen, pOperator))
+                        {
+                            //if (Regex.IsMatch(tokens[i+1], @"[\+\-*/\)]"))
+                            if (!MatchThese(tokens[i + 1], pNumber, pVariable, pOpen))
+                            {
+                                throw new FormulaFormatException(
+                                    "Any token immediately following an opening parenthesis or operator" +
+                                    "a number, variable, or opening parenthesis.");
+                            }
                         }
-                    }
-                    // Any token immediately following a number, variable, or closing parenthesis
-                    // must be an operator or closing parenthesis
-                    //if (Regex.IsMatch(tokens[i], @"^[a-zA-Z][0-9a-zA-Z]*$|^(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?$|\)"))
-                    if (MatchThese(tokens[i], pNumber, pVariable, pClose))
-                    {
-                        //if (Regex.IsMatch(tokens[i + 1], @"[\+\-*/\)]"))
-                        if (!MatchThese(tokens[i + 1], pOperator, pClose))
+                        // Any token immediately following a number, variable, or closing parenthesis
+                        // must be an operator or closing parenthesis
+                        //if (Regex.IsMatch(tokens[i], @"^[a-zA-Z][0-9a-zA-Z]*$|^(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?$|\)"))
+                        if (MatchThese(tokens[i], pNumber, pVariable, pClose))
                         {
-                            throw new FormulaFormatException(
-                                "Any token immediately following a number, variable, or closing parenthesis" +
-                                "must be an operator or closing parenthesis.");
+                            //if (Regex.IsMatch(tokens[i + 1], @"[\+\-*/\)]"))
+                            if (!MatchThese(tokens[i + 1], pOperator, pClose))
+                            {
+                                throw new FormulaFormatException(
+                                    "Any token immediately following a number, variable, or closing parenthesis" +
+                                    "must be an operator or closing parenthesis.");
+                            }
                         }
                     }
                 }
@@ -179,16 +182,16 @@ namespace Formulas
         /// Checks whether the string input matches at least one of multiple Regular Expression patterns.
         /// If input matches at least one pattern, returns true; otherwise, returns false.
         /// </summary>
-        public static bool MatchThese(string input, params string[] patterns)
+        private bool MatchThese(string input, params string[] patterns)
         {
             foreach (string pattern in patterns)
             {
-                if (!Regex.IsMatch(input, pattern, RegexOptions.IgnorePatternWhitespace))
+                if (Regex.IsMatch(input, pattern, RegexOptions.IgnorePatternWhitespace))
                 {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
 
         /// <summary>
