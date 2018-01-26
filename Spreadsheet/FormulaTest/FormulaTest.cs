@@ -7,21 +7,21 @@ namespace FormulaTest
     [TestClass]
     public class ConstructorTests
     {
-        string pOpen = @"\(";
-        string pClose = @"\)";
-        string pOperator = @"[\+\-*/]";
-        string pVariable = @"[a-zA-Z][0-9a-zA-Z]*";
-        string pNumber = @"(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?";
+        //string pOpen = @"\(";
+        //string pClose = @"\)";
+        //string pOperator = @"[\+\-*/]";
+        //string pVariable = @"[a-zA-Z][0-9a-zA-Z]*";
+        //string pNumber = @"(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?";
 
-        [TestMethod]
-        public void MatchTest() //num, var, open
-        {
-            Formula f = new Formula("0");
-            PrivateObject fTest = new PrivateObject(f);
-            object[] parameters = { "(", pNumber, pVariable, pOpen };
+        //[TestMethod]
+        //public void MatchTest() //num, var, open
+        //{
+        //    Formula f = new Formula("0");
+        //    PrivateObject fTest = new PrivateObject(f);
+        //    object[] parameters = { "(", pNumber, pVariable, pOpen };
 
-            Assert.IsTrue((bool)fTest.Invoke("MatchThese", parameters));
-        }
+        //    Assert.IsTrue((bool)fTest.Invoke("MatchThese", parameters));
+        //}
 
         [TestMethod]
         [ExpectedException(typeof(FormulaFormatException))]
