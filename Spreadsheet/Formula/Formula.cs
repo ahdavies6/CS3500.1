@@ -179,11 +179,11 @@ namespace Formulas
         /// Checks whether the string input matches at least one of multiple Regular Expression patterns.
         /// If input matches at least one pattern, returns true; otherwise, returns false.
         /// </summary>
-        private bool MatchThese(string input, params string[] patterns)
+        public static bool MatchThese(string input, params string[] patterns)
         {
             foreach (string pattern in patterns)
             {
-                if (!Regex.IsMatch(input, pattern))
+                if (!Regex.IsMatch(input, pattern, RegexOptions.IgnorePatternWhitespace))
                 {
                     return false;
                 }
