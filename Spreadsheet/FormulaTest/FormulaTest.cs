@@ -22,6 +22,9 @@ namespace FormulaTest
             Assert.IsTrue(Formula.MatchThese("var", pVariable));
             Assert.IsTrue(Formula.MatchThese("adam is a person", pVariable));
             Assert.IsTrue(Formula.MatchThese("var", pVariable));
+
+            Assert.IsTrue(Formula.MatchThese("(", pOpen));
+            Assert.IsTrue(Formula.MatchThese("  (a  ", pOpen));
         }
 
         [TestMethod]
