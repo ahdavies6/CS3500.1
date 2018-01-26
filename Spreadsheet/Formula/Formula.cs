@@ -1,5 +1,10 @@
 ﻿// Skeleton written by Joe Zachary for CS 3500, January 2017
 
+// Formula constructor and Formula.Evaluate completed by:
+// Adam Davies
+// CS 3500-001
+// Spring Semester, 2018
+
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -15,6 +20,12 @@ namespace Formulas
     /// </summary>
     public class Formula
     {
+        /// <summary>
+        /// Instance variable infix, initialized in Formula's constructor, holds a standard infix
+        /// expression derived from valid input tokens.
+        /// </summary>
+        private string infix;
+
         /// <summary>
         /// Creates a Formula from a string that consists of a standard infix expression composed
         /// from non-negative floating-point numbers (using C#-like syntax for double/int literals), 
@@ -37,9 +48,118 @@ namespace Formulas
         /// </summary>
         public Formula(String formula)
         {
+            string pFull = @"^\($|^\)$|^[\+\-*/]$|^[a-zA-Z][0-9a-zA-Z]*$|^(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?$";
+            string pOpen = @"\(";
+            string pClose = @"\)";
+            string pOperator = @"[\+\-*/]";
+            string pVariable = @"[a-zA-Z][0-9a-zA-Z]*";
+            string pNumber = @"(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?";
+
+            int openParentheses = 0;
+            int closeParentheses = 0;
+
+            List<string> tokens = new List<string>();
+            infix = "";
+
+            foreach (string token in GetTokens(formula))
+            {
+                tokens.Add(token);
+            }
+
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                // All tokens must be syntactically valid
+                if (Regex.IsMatch(tokens[i], pFull, RegexOptions.IgnorePatternWhitespace))
+                {
+                    infix = infix + tokens[i];
+                    
+                    //if (tokens[i] == "(")
+                    if (MatchThese(tokens[i], pOpen))
+                    {
+                        openParentheses++;
+                    }
+                    // There must be no more closing parenthesis than opening parenthesis
+                    // (while reading left to right)
+                    //if (tokens[i] == ")")
+                    if (MatchThese(tokens[i], pClose))
+                    {
+                        closeParentheses++;
+
+                        if (closeParentheses > openParentheses)
+                        {
+                            throw new FormulaFormatException("There must be no more closing parenthesis" +
+                                "than opening parenthesis, reading left to right.");
+                        }
+                    }
+                    // Any token immediately following an opening parenthesis or operator must be
+                    // a number, variable, or opening parenthesis
+                    //if (Regex.IsMatch(tokens[i], @"[\+\-*/\(]"))
+                    if (MatchThese(tokens[i], pOpen, pOperator))
+                    {
+                        //if (Regex.IsMatch(tokens[i+1], @"[\+\-*/\)]"))
+                        if (!MatchThese(tokens[i + 1], pNumber, pVariable, pOpen))
+                        {
+                            throw new FormulaFormatException(
+                                "Any token immediately following an opening parenthesis or operator" +
+                                "a number, variable, or opening parenthesis.");
+                        }
+                    }
+                    // Any token immediately following a number, variable, or closing parenthesis
+                    // must be an operator or closing parenthesis
+                    //if (Regex.IsMatch(tokens[i], @"^[a-zA-Z][0-9a-zA-Z]*$|^(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?$|\)"))
+                    if (MatchThese(tokens[i], pNumber, pVariable, pClose))
+                    {
+                        //if (Regex.IsMatch(tokens[i + 1], @"[\+\-*/\)]"))
+                        if (!MatchThese(tokens[i + 1], pOperator, pClose))
+                        {
+                            throw new FormulaFormatException(
+                                "Any token immediately following a number, variable, or closing parenthesis" +
+                                "must be an operator or closing parenthesis.");
+                        }
+                    }
+                }
+                else
+                {
+                    throw new FormulaFormatException("Invalid token: " + tokens[i]);
+                }
+            }
+            // There must be an equal number of opening and closing parenthesis
+            // Note: the inequality (closeParenthesis > openParenthesis) has already been checked for
+            // each instance of a closing parenthesis.
+            if (openParentheses > closeParentheses)
+            {
+                throw new FormulaFormatException("Not all parenthesis have been closed.");
+            }
+            // The first token of a formula must be a number, variable, or opening parenthesis
+            //if (Regex.IsMatch(tokens[0], @"[\+\-*/\)]"))
+            if (!MatchThese(tokens[0], pNumber, pVariable, pOpen))
+            {
+                throw new FormulaFormatException("Formula must begin with a number, variable, or opening parenthesis.");
+            }
+            // The last token of a formula must be a number, variable, or closing parenthesis
+            //if (Regex.IsMatch(tokens[tokens.Count - 1], @"[\+\-*/\(]"))
+            if (!MatchThese(tokens[tokens.Count - 1], pNumber, pVariable, pClose))
+            {
+                throw new FormulaFormatException("Formula must end with a number, variable, or closing parenthesis.");
+            }
+            // There must be at least one token
+            if (infix == "")
+            {
+                throw new FormulaFormatException("Formula must have at least one valid token.");
+            }
         }
+
         /// <summary>
-        /// Evaluates this Formula, using the Lookup delegate to determine the values of variables.  (The
+        /// A Lookup method is one that maps some strings to double values.  Given a string,
+        /// such a function can either return a double (meaning that the string maps to the
+        /// double) or throw an UndefinedVariableException (meaning that the string is unmapped 
+        /// to a value). Exactly how a Lookup method decides which strings map to doubles and which
+        /// don't is up to the implementation of the method.
+        /// </summary>
+        public delegate double Lookup(string var);
+
+        /// <summary>
+        /// Evaluates this Formula, using the Lookup delegate to determine the values of variables.  The
         /// delegate takes a variable name as a parameter and returns its value (if it has one) or throws
         /// an UndefinedVariableException (otherwise).  Uses the standard precedence rules when doing the evaluation.
         /// 
@@ -49,7 +169,26 @@ namespace Formulas
         /// </summary>
         public double Evaluate(Lookup lookup)
         {
+            Console.WriteLine(lookup);
+
+            // OG code
             return 0;
+        }
+
+        /// <summary>
+        /// Checks whether the string input matches at least one of multiple Regular Expression patterns.
+        /// If input matches at least one pattern, returns true; otherwise, returns false.
+        /// </summary>
+        private bool MatchThese(string input, params string[] patterns)
+        {
+            foreach (string pattern in patterns)
+            {
+                if (!Regex.IsMatch(input, pattern))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
@@ -95,15 +234,6 @@ namespace Formulas
             }
         }
     }
-
-    /// <summary>
-    /// A Lookup method is one that maps some strings to double values.  Given a string,
-    /// such a function can either return a double (meaning that the string maps to the
-    /// double) or throw an UndefinedVariableException (meaning that the string is unmapped 
-    /// to a value. Exactly how a Lookup method decides which strings map to doubles and which
-    /// don't is up to the implementation of the method.
-    /// </summary>
-    public delegate double Lookup(string var);
 
     /// <summary>
     /// Used to report that a Lookup delegate is unable to determine the value
