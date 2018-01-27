@@ -24,7 +24,14 @@ namespace Formulas
         /// Instance variable infix, initialized in Formula's constructor, holds a standard infix
         /// expression derived from valid input tokens.
         /// </summary>
-        private string infix;
+        private List<string> equation;
+
+        public readonly string pFull = @"^\($|^\)$|^[\+\-*/]$|^[a-zA-Z][0-9a-zA-Z]*$|^(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?$";
+        public readonly string pOpen = @"\(";
+        public readonly string pClose = @"\)";
+        public readonly string pOperator = @"[\+\-*/]";
+        public readonly string pVariable = @"[a-zA-Z][0-9a-zA-Z]*";
+        public readonly string pNumber = @"(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?";
 
         /// <summary>
         /// Creates a Formula from a string that consists of a standard infix expression composed
@@ -48,74 +55,69 @@ namespace Formulas
         /// </summary>
         public Formula(String formula)
         {
-            string pFull = @"^\($|^\)$|^[\+\-*/]$|^[a-zA-Z][0-9a-zA-Z]*$|^(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?$";
-            string pOpen = @"\(";
-            string pClose = @"\)";
-            string pOperator = @"[\+\-*/]";
-            string pVariable = @"[a-zA-Z][0-9a-zA-Z]*";
-            string pNumber = @"(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?";
-
             int openParentheses = 0;
             int closeParentheses = 0;
 
-            List<string> tokens = new List<string>();
-            infix = "";
+            //List<string> tokens = new List<string>();
+            //infix = "";
+            equation = new List<string>();
 
             foreach (string token in GetTokens(formula))
             {
-                tokens.Add(token);
+                //tokens.Add(token);
+                equation.Add(token);
             }
 
-            for (int i = 0; i < tokens.Count; i++)
+            for (int i = 0; i < equation.Count; i++)
             {
                 // All tokens must be syntactically valid
-                if (Regex.IsMatch(tokens[i], pFull, RegexOptions.IgnorePatternWhitespace))
+                if (Regex.IsMatch(equation[i], pFull, RegexOptions.IgnorePatternWhitespace))
                 {
-                    infix = infix + tokens[i];
+                    //infix = infix + infix[i];
                     
                     //if (tokens[i] == "(")
-                    if (MatchThese(tokens[i], pOpen))
+                    if (MatchThese(equation[i], pOpen))
                     {
                         openParentheses++;
                     }
                     // There must be no more closing parenthesis than opening parenthesis
                     // (while reading left to right)
                     //if (tokens[i] == ")")
-                    if (MatchThese(tokens[i], pClose))
+                    if (MatchThese(equation[i], pClose))
                     {
                         closeParentheses++;
 
                         if (closeParentheses > openParentheses)
                         {
-                            throw new FormulaFormatException("There must be no more closing parenthesis" +
+                            throw new FormulaFormatException("There must be no more closing parenthesis " +
                                 "than opening parenthesis, reading left to right.");
                         }
                     }
-                    if (i < tokens.Count - 1)
+                    if (i < equation.Count - 1)
                         {
                         // Any token immediately following an opening parenthesis or operator must be
                         // a number, variable, or opening parenthesis
                         //if (Regex.IsMatch(tokens[i], @"[\+\-*/\(]"))
-                        if (MatchThese(tokens[i], pOpen, pOperator))
+                        if (MatchThese(equation[i], pOpen, pOperator))
                         {
                             //if (Regex.IsMatch(tokens[i+1], @"[\+\-*/\)]"))
-                            if (!MatchThese(tokens[i + 1], pNumber, pVariable, pOpen))
+                            if (!MatchThese(equation[i + 1], pNumber, pVariable, pOpen))
                             {
                                 throw new FormulaFormatException(
-                                    "Any token immediately following an opening parenthesis or operator" +
+                                    "Any token immediately following an opening parenthesis or operator " +
                                     "a number, variable, or opening parenthesis.");
                             }
                         }
                         // Any token immediately following a number, variable, or closing parenthesis
                         // must be an operator or closing parenthesis
                         //if (Regex.IsMatch(tokens[i], @"^[a-zA-Z][0-9a-zA-Z]*$|^(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?$|\)"))
-                        if (MatchThese(tokens[i], pNumber, pVariable, pClose))
+                        if (MatchThese(equation[i], pNumber, pVariable, pClose))
                         {
                             //if (Regex.IsMatch(tokens[i + 1], @"[\+\-*/\)]"))
-                            if (!MatchThese(tokens[i + 1], pOperator, pClose))
+                            if (!MatchThese(equation[i + 1], pOperator, pClose))
                             {
                                 throw new FormulaFormatException(
-                                    "Any token immediately following a number, variable, or closing parenthesis" +
+                                    "Any token immediately following a number, variable, or closing parenthesis " +
                                     "must be an operator or closing parenthesis.");
                             }
                         }
@@ -123,7 +125,7 @@ namespace Formulas
                 }
                 else
                 {
-                    throw new FormulaFormatException("Invalid token: " + tokens[i]);
+                    throw new FormulaFormatException("Invalid token: " + equation[i]);
                 }
             }
             // There must be an equal number of opening and closing parenthesis
@@ -135,18 +137,18 @@ namespace Formulas
             }
             // The first token of a formula must be a number, variable, or opening parenthesis
             //if (Regex.IsMatch(tokens[0], @"[\+\-*/\)]"))
-            if (!MatchThese(tokens[0], pNumber, pVariable, pOpen))
+            if (!MatchThese(equation[0], pNumber, pVariable, pOpen))
             {
                 throw new FormulaFormatException("Formula must begin with a number, variable, or opening parenthesis.");
             }
             // The last token of a formula must be a number, variable, or closing parenthesis
             //if (Regex.IsMatch(tokens[tokens.Count - 1], @"[\+\-*/\(]"))
-            if (!MatchThese(tokens[tokens.Count - 1], pNumber, pVariable, pClose))
+            if (!MatchThese(equation[equation.Count - 1], pNumber, pVariable, pClose))
             {
                 throw new FormulaFormatException("Formula must end with a number, variable, or closing parenthesis.");
             }
             // There must be at least one token
-            if (infix == "")
+            if (equation.Count == 0)
             {
                 throw new FormulaFormatException("Formula must have at least one valid token.");
             }
@@ -172,10 +174,179 @@ namespace Formulas
         /// </summary>
         public double Evaluate(Lookup lookup)
         {
-            Console.WriteLine(lookup);
+            //double sum = 0;
 
-            // OG code
-            return 0;
+            //foreach (string token in infix)
+            //{
+            //    sum += lookup(token);
+            //}
+
+            //return sum;
+
+            Stack<double> vStack = new Stack<double>(); // value stack
+            Stack<string> oStack = new Stack<string>(); // operator stack
+
+            foreach (string token in equation)
+            {
+                if (MatchThese(token, pNumber))
+                {
+                    double val = Int32.Parse(token);
+
+                    if (val != 0)
+                    {
+                        if (oStack.Count > 0)
+                        {
+                            if (oStack.Peek() == "*")
+                            {
+                                oStack.Pop();
+                                double multBy = vStack.Pop();
+                                vStack.Push((val * multBy));
+                            }
+                            else if (oStack.Peek() == "/")
+                            {
+                                oStack.Pop();
+                                double numerator = vStack.Pop();
+                                vStack.Push((numerator / val));
+                            }
+                            else
+                            {
+                                vStack.Push(val);
+                            }
+                        }
+                        else
+                        {
+                            vStack.Push(val);
+                        }
+                    }
+                    else
+                    {
+                        throw new FormulaEvaluationException("Cannot divide by zero.");
+                    }
+                }
+                else if (MatchThese(token, pVariable))
+                {
+                    {
+                        //double val = Int32.Parse(token);
+                        double val = lookup(token);
+
+                        if (val != 0)
+                        {
+                            if (oStack.Count > 0)
+                            {
+                                if (oStack.Peek() == "*")
+                                {
+                                    oStack.Pop();
+                                    double multBy = vStack.Pop();
+                                    vStack.Push((val * multBy));
+                                }
+                                else if (oStack.Peek() == "/")
+                                {
+                                    oStack.Pop();
+                                    double numerator = vStack.Pop();
+                                    vStack.Push((numerator / val));
+                                }
+                                else
+                                {
+                                    vStack.Push(val);
+                                }
+                            }
+                            else
+                            {
+                                vStack.Push(val);
+                            }
+                        }
+                        else
+                        {
+                            throw new FormulaEvaluationException("Cannot divide by zero.");
+                        }
+                    }
+                }
+                else if (MatchThese(token, pOperator))
+                {
+                    if (oStack.Count > 0)
+                    {
+                        if (oStack.Peek() == "+")
+                        {
+                            double v1 = vStack.Pop();
+                            double v2 = vStack.Pop();
+                            oStack.Pop();
+                            vStack.Push(v1 + v2);
+                        }
+                        else if (oStack.Peek() == "-")
+                        {
+                            double subThis = vStack.Pop();
+                            double subFrom = vStack.Pop();
+                            oStack.Pop();
+                            vStack.Push(subFrom - subThis);
+                        }
+                    }
+                    oStack.Push(token);
+                }
+                else if (MatchThese(token, pOpen))
+                {
+                    oStack.Push(token);
+                }
+                else if (MatchThese(token, pClose))
+                {
+                    if (oStack.Count > 0)
+                    {
+                        if (oStack.Peek() == "+")
+                        {
+                            double v1 = vStack.Pop();
+                            double v2 = vStack.Pop();
+                            oStack.Pop();
+                            vStack.Push(v1 + v2);
+                        }
+                        else if (oStack.Peek() == "-")
+                        {
+                            double subThis = vStack.Pop();
+                            double subFrom = vStack.Pop();
+                            oStack.Pop();
+                            vStack.Push(subFrom - subThis);
+                        }
+                    }
+                    oStack.Pop();
+
+                    if (oStack.Count > 0)
+                    {
+                        if (oStack.Peek() == "*")
+                        {
+                            double v1 = vStack.Pop();
+                            double v2 = vStack.Pop();
+                            oStack.Pop();
+                            vStack.Push(v1 * v2);
+                        }
+                        else if (oStack.Peek() == "/")
+                        {
+                            double denominator = vStack.Pop();
+                            double numerator = vStack.Pop();
+                            oStack.Pop();
+                            vStack.Push(numerator / denominator);
+                        }
+                    }
+                }
+            }
+            if (oStack.Count == 0)
+            {
+                return vStack.Pop();
+            }
+            else 
+            {
+                if (oStack.Peek() == "+")
+                {
+                    double v1 = vStack.Pop();
+                    double v2 = vStack.Pop();
+                    oStack.Pop();
+                    return v1 + v2;
+                }
+                else // oStack contains only one "-"
+                {
+                    double subThis = vStack.Pop();
+                    double subFrom = vStack.Pop();
+                    oStack.Pop();
+                    return subFrom - subThis;
+                }
+            }
         }
 
         /// <summary>

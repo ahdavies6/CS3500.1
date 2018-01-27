@@ -5,7 +5,7 @@ using Formulas;
 namespace FormulaTest
 {
     [TestClass]
-    public class ConstructorTests
+    public class FormulaTests
     {
         //string pOpen = @"\(";
         //string pClose = @"\)";
@@ -22,6 +22,8 @@ namespace FormulaTest
 
         //    Assert.IsTrue((bool)fTest.Invoke("MatchThese", parameters));
         //}
+
+        // Constructor tests
 
         [TestMethod]
         [ExpectedException(typeof(FormulaFormatException))]
@@ -125,17 +127,77 @@ namespace FormulaTest
         {
             Formula f = new Formula("2 5 + 3");
         }
-    }
 
-    [TestClass]
-    class EvaluateTests
-    {
+        // Evaluate and Lookup tests
 
-    }
+        [TestMethod]
+        public void EvalTest1()
+        {
+            Formula f = new Formula("6");
+            Assert.AreEqual(f.Evaluate(Return5), 6);
+        }
 
-    [TestClass]
-    class LookupTests
-    {
+        [TestMethod]
+        public void EvalTest2()
+        {
+            Formula f = new Formula("x");
+            Assert.AreEqual(f.Evaluate(Return5), 5);
+        }
 
+        [TestMethod]
+        public void EvalTest3()
+        {
+            Formula f = new Formula("14 + x");
+            Assert.AreEqual(f.Evaluate(Return5), 19);
+        }
+
+        [TestMethod]
+        public void EvalTest4()
+        {
+            Formula f = new Formula("(14 * s) / 7");
+            Assert.AreEqual(f.Evaluate(Return5), 10);
+        }
+
+        [TestMethod]
+        public void EvalTest5()
+        {
+            Formula f = new Formula("(200 - 10 / s) + 4");
+            Assert.AreEqual(f.Evaluate(Return5), 42);
+        }
+
+        [TestMethod]
+        public void EvalFinal()
+        {
+            Formula f = new Formula("(s * 4) + (10/(2+3)) - ((99 - 100) + 3) * (7      -  4) / 4");
+            Assert.AreEqual(f.Evaluate(Return5), 15);
+        }
+
+        [TestMethod]
+        public void LookupTestWild()
+        {
+            Formula f = new Formula("(five + woohoo) * (6 / (seven - four))");
+            Assert.AreEqual(f.Evaluate(Wild), 22);
+        }
+
+        private double Return5(string s)
+        {
+            return 5;
+        }
+
+        private double Wild(string s)
+        {
+            if (s == "five")
+            {
+                return 5;
+            }
+            else if (s == "seven")
+            {
+                return 7;
+            }
+            else
+            {
+                return s.Length;
+            }
+        }
     }
 }
