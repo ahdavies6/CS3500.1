@@ -322,7 +322,7 @@ namespace Formulas
                             double numerator = vStack.Pop();
                             oStack.Pop();
                             vStack.Push(numerator / denominator);
-                        }
+                        } 
                     }
                 }
             }
