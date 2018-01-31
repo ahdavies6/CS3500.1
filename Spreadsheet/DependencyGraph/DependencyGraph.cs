@@ -74,7 +74,7 @@ namespace Dependencies
         /// <summary>
         /// Reports whether dependees(s) is non-empty.  Requires s != null.
         /// </summary>
-        public bool HasDependees(string t)
+        public bool HasDependees(string s)
         {
             return false;
         }
@@ -90,7 +90,7 @@ namespace Dependencies
         /// <summary>
         /// Enumerates dependees(s).  Requires s != null.
         /// </summary>
-        public IEnumerable<string> GetDependees(string t)
+        public IEnumerable<string> GetDependees(string s)
         {
             return null;
         }
