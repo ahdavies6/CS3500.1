@@ -49,18 +49,24 @@ namespace Dependencies
     public class DependencyGraph
     {
         /// <summary>
-        /// Creates a DependencyGraph containing no dependencies.
-        /// </summary>
-        public DependencyGraph()
-        {
-        }
-
-        /// <summary>
         /// The number of dependencies in the DependencyGraph.
         /// </summary>
         public int Size
         {
-            get { return 0; }
+            //OG
+            //get { return 0; }
+            get;
+        }
+
+        private Dictionary<string, DependencyNode> nodes;
+
+        /// <summary>
+        /// Creates a DependencyGraph containing no dependencies.
+        /// </summary>
+        public DependencyGraph()
+        {
+            nodes = new Dictionary<string, DependencyNode>();
+            Size = 0;
         }
 
         /// <summary>
@@ -68,15 +74,29 @@ namespace Dependencies
         /// </summary>
         public bool HasDependents(string s)
         {
-            return false;
+            if (s != null)
+            {
+                return nodes[s].Dependents.Count > 0;
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
 
         /// <summary>
         /// Reports whether dependees(s) is non-empty.  Requires s != null.
         /// </summary>
-        public bool HasDependees(string t)
+        public bool HasDependees(string s)
         {
-            return false;
+            if (s != null)
+            {
+                return nodes[s].Dependees.Count > 0;
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
 
         /// <summary>
@@ -84,15 +104,29 @@ namespace Dependencies
         /// </summary>
         public IEnumerable<string> GetDependents(string s)
         {
-            return null;
+            if (s != null)
+            {
+                return nodes[s].Dependents.Keys;
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
 
         /// <summary>
-        /// Enumerates dependees(s).  Requires s != null.
+        /// Enumerates dependees(t).  Requires t != null.
         /// </summary>
-        public IEnumerable<string> GetDependees(string t)
+        public IEnumerable<string> GetDependees(string s)
         {
-            return null;
+            if (s != null)
+            {
+                return nodes[s].Dependees.Keys;
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
 
         /// <summary>
@@ -102,6 +136,27 @@ namespace Dependencies
         /// </summary>
         public void AddDependency(string s, string t)
         {
+            if (s != null && t != null)
+            {
+                if (nodes.ContainsKey(s))
+                {
+                    if (!nodes[s].Dependents.Contains(s) && !nodes[s].Dependees.Contains(t))
+                    {
+                        nodes[s].Dependents.Add(s);
+                        nodes[s].Dependees.Add(t);
+                    }
+                }
+                else
+                {
+                    nodes.Add(s, new DependencyNode());
+                    nodes[s].Dependents.Add(s);
+                    nodes[s].Dependees.Add(t);
+                }
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
 
         /// <summary>
@@ -111,6 +166,14 @@ namespace Dependencies
         /// </summary>
         public void RemoveDependency(string s, string t)
         {
+            if (s != null && t != null)
+            {
+
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
 
         /// <summary>
@@ -120,6 +183,14 @@ namespace Dependencies
         /// </summary>
         public void ReplaceDependents(string s, IEnumerable<string> newDependents)
         {
+            if (s != null && t != null)
+            {
+
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
 
         /// <summary>
@@ -129,6 +200,62 @@ namespace Dependencies
         /// </summary>
         public void ReplaceDependees(string t, IEnumerable<string> newDependees)
         {
+            if (s != null && t != null)
+            {
+
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Represents a node in DependencyGraph. Contains a set of dependents and a set of and dependees.
+    /// </summary>
+    internal class DependencyNode
+    {
+        public Dictionary<string, DependencyNode> Dependents { get; set; }
+        public Dictionary<string, DependencyNode> Dependees { get; set; }
+
+        /// <summary>
+        /// Creates a DependencyNode with an empty set of dependents and an empty set of dependees.
+        /// </summary>
+        public DependencyNode()
+        {
+            Dependents = new Dictionary<string, DependencyNode>();
+            Dependees = new Dictionary<string, DependencyNode>();
+        }
+
+        public void AddDependent(string s, DependencyGraph graph)
+        {
+            if (s != null)
+            {
+                if (Dependents.ContainsKey(s))
+                {
+                    if (!Dependents[s].Dependents.Contains(s) && !Dependents[s].Dependees.Contains(t))
+                    {
+                        Dependents[s].Dependents.Add(s);
+                        Dependents[s].Dependees.Add(t);
+                    }
+                }
+                else
+                {
+                    Dependents.Add(s, new DependencyNode());
+
+                    if (graph.HasDependents(s))
+                    {
+                        Dependents.Add(s, graph.GetDependents)
+                    }
+                    //Dependents[s].Dependents.Add(s);
+                    //Dependents[s].Dependees.Add(t);
+                }
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
     }
 }
