@@ -51,10 +51,19 @@ namespace Dependencies
         /// <summary>
         /// The number of dependencies in the DependencyGraph.
         /// </summary>
-        private int size;
         public int Size
         {
-            get { return size; }
+            get
+            {
+                int n = 0;
+                foreach (DependencyNode node in nodes.Values)
+                {
+                    n += node.Size;
+                }
+                // division by two because, for each node N representing all dependents s of t,
+                // there is a mirror node N* representing all dependees t of s
+                return n / 2;
+            }
         }
 
         /// <summary>
@@ -69,7 +78,6 @@ namespace Dependencies
         public DependencyGraph()
         {
             nodes = new Dictionary<string, DependencyNode>();
-            size = 0;
         }
 
         /// <summary>
@@ -178,10 +186,6 @@ namespace Dependencies
                     nodes.Add(t, dependee);
                 }
 
-                if (!dependent.MyDependees.ContainsKey(t) && !dependent.MyDependees.ContainsKey(s))
-                {
-                    size++;
-                }
                 dependent.AddDependee(t, dependee);
                 dependee.AddDependent(s, dependent);
             }
@@ -200,7 +204,11 @@ namespace Dependencies
         {
             if (s != null && t != null)
             {
-
+                if (nodes.ContainsKey(s) && nodes.ContainsKey(t))
+                {
+                    nodes[s].RemoveDependee(t);
+                    nodes[t].RemoveDependent(s);
+                }
             }
             else
             {
@@ -217,15 +225,20 @@ namespace Dependencies
         {
             if (s != null)
             {
+                foreach (string key in GetDependents(s))
+                {
+                    RemoveDependency(s, key);
+                }
+
                 foreach (string t in newDependents)
                 {
                     if (t != null)
                     {
-
+                        AddDependency(s, t);
                     }
                     else
                     {
-                        throw new ArgumentNullException();
+                        throw new NullReferenceException();
                     }
                 }
             }
@@ -244,15 +257,20 @@ namespace Dependencies
         {
             if (t != null)
             {
+                foreach (string key in GetDependees(t))
+                {
+                    RemoveDependency(key, t);
+                }
+
                 foreach (string s in newDependees)
                 {
                     if (s != null)
                     {
-
+                        AddDependency(s, t);
                     }
                     else
                     {
-                        throw new ArgumentNullException();
+                        throw new NullReferenceException();
                     }
                 }
             }
@@ -272,6 +290,14 @@ namespace Dependencies
         /// The node's key in DependencyNode's Nodes Dictionary.
         /// </summary>
         private string myKey;
+
+        public int Size
+        {
+            get
+            {
+                return myDependents.Count + myDependees.Count;
+            }
+        }
 
         /// <summary>
         /// All dependents of this node.
@@ -302,32 +328,50 @@ namespace Dependencies
         }
 
         /// <summary>
-        /// If this node does not have (dependentKey) in myDependents, the node with key (dependentKey)
+        /// If this node does not have (key) in myDependents, the node with key (key)
         /// is added to myDependents; else, does nothing.
         /// </summary>
-        public void AddDependent(string dependentKey, DependencyNode dependee)
+        public void AddDependent(string key, DependencyNode dependee)
         {
-            if (dependentKey != null)
+            if (!myDependents.ContainsKey(key)) // dependent isn't already in MyDependents
             {
-                if (!MyDependents.ContainsKey(dependentKey)) // dependent isn't already in MyDependents
-                {
-                    MyDependents.Add(dependentKey, dependee);
-                }
+                myDependents.Add(key, dependee);
             }
         }
 
         /// <summary>
-        /// If this node does not have (dependeeKey) in myDependees, the node with key (dependeeKey)
+        /// If this node does not have (key) in myDependees, the node with key (key)
         /// is added to myDependees; else, does nothing.
         /// </summary>
-        public void AddDependee(string dependeeKey, DependencyNode dependent)
+        public void AddDependee(string key, DependencyNode dependent)
         {
-            if (dependeeKey != null)
+            if (!myDependees.ContainsKey(key)) // dependent isn't already in MyDependents
             {
-                if (!MyDependees.ContainsKey(dependeeKey)) // dependent isn't already in MyDependents
-                {
-                    MyDependees.Add(dependeeKey, dependent);
-                }
+                myDependees.Add(key, dependent);
+            }
+        }
+
+        /// <summary>
+        /// If this node has (key) in myDependents, the node with key (key)
+        /// is removed from myDependents; else, does nothing.
+        /// </summary>
+        public void RemoveDependent(string key)
+        {
+            if (myDependents.ContainsKey(key))
+            {
+                myDependents.Remove(key);
+            }
+        }
+
+        /// <summary>
+        /// If this node has (key) in myDependes, the node with key (key)
+        /// is removed from myDependees; else, does nothing.
+        /// </summary>
+        public void RemoveDependee(string key)
+        {
+            if (myDependees.ContainsKey(key))
+            {
+                myDependees.Remove(key);
             }
         }
     }
