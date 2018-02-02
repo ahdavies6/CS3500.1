@@ -51,14 +51,17 @@ namespace Dependencies
         /// <summary>
         /// The number of dependencies in the DependencyGraph.
         /// </summary>
+        private int size;
         public int Size
         {
-            //OG
-            //get { return 0; }
-            get;
+            get { return size; }
         }
 
+        /// <summary>
+        /// All the nodes (vertices) in the DependencyGraph.
+        /// </summary>
         private Dictionary<string, DependencyNode> nodes;
+
 
         /// <summary>
         /// Creates a DependencyGraph containing no dependencies.
@@ -66,7 +69,7 @@ namespace Dependencies
         public DependencyGraph()
         {
             nodes = new Dictionary<string, DependencyNode>();
-            Size = 0;
+            size = 0;
         }
 
         /// <summary>
@@ -76,7 +79,14 @@ namespace Dependencies
         {
             if (s != null)
             {
-                return nodes[s].Dependents.Count > 0;
+                if (nodes.ContainsKey(s))
+                {
+                    return nodes[s].MyDependents.Count > 0;
+                }
+                else
+                {
+                    return false;
+                }
             }
             else
             {
@@ -91,7 +101,14 @@ namespace Dependencies
         {
             if (s != null)
             {
-                return nodes[s].Dependees.Count > 0;
+                if (nodes.ContainsKey(s))
+                {
+                    return nodes[s].MyDependees.Count > 0;
+                }
+                else
+                {
+                    return false;
+                }
             }
             else
             {
@@ -106,7 +123,7 @@ namespace Dependencies
         {
             if (s != null)
             {
-                return nodes[s].Dependents.Keys;
+                return nodes[s].MyDependents.Keys;
             }
             else
             {
@@ -121,7 +138,7 @@ namespace Dependencies
         {
             if (s != null)
             {
-                return nodes[s].Dependees.Keys;
+                return nodes[s].MyDependees.Keys;
             }
             else
             {
@@ -138,20 +155,35 @@ namespace Dependencies
         {
             if (s != null && t != null)
             {
+                DependencyNode dependent;
+                DependencyNode dependee;
+
                 if (nodes.ContainsKey(s))
                 {
-                    if (!nodes[s].Dependents.Contains(s) && !nodes[s].Dependees.Contains(t))
-                    {
-                        nodes[s].Dependents.Add(s);
-                        nodes[s].Dependees.Add(t);
-                    }
+                    dependent = nodes[s];
                 }
                 else
                 {
-                    nodes.Add(s, new DependencyNode());
-                    nodes[s].Dependents.Add(s);
-                    nodes[s].Dependees.Add(t);
+                    dependent = new DependencyNode(s);
+                    nodes.Add(s, dependent);
                 }
+
+                if (nodes.ContainsKey(t))
+                {
+                    dependee = nodes[t];
+                }
+                else
+                {
+                    dependee = new DependencyNode(t);
+                    nodes.Add(t, dependee);
+                }
+
+                if (!dependent.MyDependees.ContainsKey(t) && !dependent.MyDependees.ContainsKey(s))
+                {
+                    size++;
+                }
+                dependent.AddDependee(t, dependee);
+                dependee.AddDependent(s, dependent);
             }
             else
             {
@@ -183,9 +215,19 @@ namespace Dependencies
         /// </summary>
         public void ReplaceDependents(string s, IEnumerable<string> newDependents)
         {
-            if (s != null && t != null)
+            if (s != null)
             {
+                foreach (string t in newDependents)
+                {
+                    if (t != null)
+                    {
 
+                    }
+                    else
+                    {
+                        throw new ArgumentNullException();
+                    }
+                }
             }
             else
             {
@@ -200,9 +242,19 @@ namespace Dependencies
         /// </summary>
         public void ReplaceDependees(string t, IEnumerable<string> newDependees)
         {
-            if (s != null && t != null)
+            if (t != null)
             {
+                foreach (string s in newDependees)
+                {
+                    if (s != null)
+                    {
 
+                    }
+                    else
+                    {
+                        throw new ArgumentNullException();
+                    }
+                }
             }
             else
             {
@@ -216,45 +268,66 @@ namespace Dependencies
     /// </summary>
     internal class DependencyNode
     {
-        public Dictionary<string, DependencyNode> Dependents { get; set; }
-        public Dictionary<string, DependencyNode> Dependees { get; set; }
+        /// <summary>
+        /// The node's key in DependencyNode's Nodes Dictionary.
+        /// </summary>
+        private string myKey;
 
         /// <summary>
-        /// Creates a DependencyNode with an empty set of dependents and an empty set of dependees.
+        /// All dependents of this node.
         /// </summary>
-        public DependencyNode()
+        public Dictionary<string, DependencyNode> MyDependents
         {
-            Dependents = new Dictionary<string, DependencyNode>();
-            Dependees = new Dictionary<string, DependencyNode>();
+            get { return myDependents; }
+        }
+        private Dictionary<string, DependencyNode> myDependents;
+
+        /// <summary>
+        /// All dependees of this node.
+        /// </summary>
+        public Dictionary<string, DependencyNode> MyDependees
+        {
+            get { return myDependees; }
+        }
+        private Dictionary<string, DependencyNode> myDependees;
+
+        /// <summary>
+        /// Creates a DependencyNode of name (key) with an empty set of dependents and an empty set of dependees.
+        /// </summary>
+        public DependencyNode(string key)
+        {
+            myKey = key;
+            myDependents = new Dictionary<string, DependencyNode>();
+            myDependees = new Dictionary<string, DependencyNode>();
         }
 
-        public void AddDependent(string s, DependencyGraph graph)
+        /// <summary>
+        /// If this node does not have (dependentKey) in myDependents, the node with key (dependentKey)
+        /// is added to myDependents; else, does nothing.
+        /// </summary>
+        public void AddDependent(string dependentKey, DependencyNode dependee)
         {
-            if (s != null)
+            if (dependentKey != null)
             {
-                if (Dependents.ContainsKey(s))
+                if (!MyDependents.ContainsKey(dependentKey)) // dependent isn't already in MyDependents
                 {
-                    if (!Dependents[s].Dependents.Contains(s) && !Dependents[s].Dependees.Contains(t))
-                    {
-                        Dependents[s].Dependents.Add(s);
-                        Dependents[s].Dependees.Add(t);
-                    }
-                }
-                else
-                {
-                    Dependents.Add(s, new DependencyNode());
-
-                    if (graph.HasDependents(s))
-                    {
-                        Dependents.Add(s, graph.GetDependents)
-                    }
-                    //Dependents[s].Dependents.Add(s);
-                    //Dependents[s].Dependees.Add(t);
+                    MyDependents.Add(dependentKey, dependee);
                 }
             }
-            else
+        }
+
+        /// <summary>
+        /// If this node does not have (dependeeKey) in myDependees, the node with key (dependeeKey)
+        /// is added to myDependees; else, does nothing.
+        /// </summary>
+        public void AddDependee(string dependeeKey, DependencyNode dependent)
+        {
+            if (dependeeKey != null)
             {
-                throw new ArgumentNullException();
+                if (!MyDependees.ContainsKey(dependeeKey)) // dependent isn't already in MyDependents
+                {
+                    MyDependees.Add(dependeeKey, dependent);
+                }
             }
         }
     }
