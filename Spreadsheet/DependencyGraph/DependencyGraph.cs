@@ -225,9 +225,14 @@ namespace Dependencies
         {
             if (s != null)
             {
-                foreach (string key in GetDependents(s))
+                List<string> keys = new List<string>();
+                foreach (string key in GetDependees(s))
                 {
-                    RemoveDependency(s, key);
+                    keys.Add(key);
+                }
+                foreach (string key in keys)
+                {
+                    RemoveDependency(key, s);
                 }
 
                 foreach (string t in newDependents)
@@ -257,9 +262,14 @@ namespace Dependencies
         {
             if (t != null)
             {
+                List<string> keys = new List<string>();
                 foreach (string key in GetDependees(t))
                 {
-                    RemoveDependency(key, t);
+                    keys.Add(key);
+                }
+                foreach (string key in keys)
+                {
+                    RemoveDependency(t, key);
                 }
 
                 foreach (string s in newDependees)

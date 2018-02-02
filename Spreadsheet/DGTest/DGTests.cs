@@ -145,8 +145,8 @@ namespace DGTest
         }
 
         /// <summary>
-        /// Ensures ReplaceDependents and ReplaceDependees function as intended with a small
-        /// number of dependencies.
+        /// Ensures ReplaceDependents and ReplaceDependees function as intended with a few
+        /// dependencies.
         /// </summary>
         [TestMethod]
         public void TestReplaceSmall()
@@ -161,8 +161,10 @@ namespace DGTest
             graph.AddDependency(dependent, c);
 
             string[] replace = { "tea", "engineering", "irresponsible coding" };
-            graph.ReplaceDependents(dependent, replace);
+            //graph.ReplaceDependents(dependent, replace);
+            graph.ReplaceDependees(dependent, replace);
 
+            Assert.AreEqual(3, graph.Size);
             int i = 0;
             foreach (string s in graph.GetDependents(dependent))
             {
@@ -246,12 +248,12 @@ namespace DGTest
         /// the IEnumerable argument is null.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(NullReferenceException))]
+        [ExpectedException(typeof(ArgumentNullException))]
         public void TestNull7()
         {
             DependencyGraph graph = new DependencyGraph();
-            string[] nuller = { "hi", null, "am broken" };
-            graph.ReplaceDependents("hi", nuller);
+            string[] fine = { "hi", "I'm", "fine" };
+            graph.ReplaceDependents(null, fine);
         }
 
         /// <summary>
