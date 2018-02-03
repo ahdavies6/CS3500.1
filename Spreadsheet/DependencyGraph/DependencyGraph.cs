@@ -206,7 +206,6 @@ namespace Dependencies
         {
             if (s != null && t != null)
             {
-                // new:
                 DependencyNode dependee;
                 DependencyNode dependent;
 
