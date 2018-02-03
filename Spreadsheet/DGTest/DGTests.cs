@@ -27,17 +27,17 @@ namespace DGTest
             Assert.IsTrue(graph.HasDependents(dependee));
 
             int n = 0;
-            foreach (string s in graph.GetDependents(dependent))
+            foreach (string s in graph.GetDependents(dependee))
             {
-                Assert.AreEqual(dependee, s);
+                Assert.AreEqual(dependent, s);
                 n++;
             }
             Assert.AreEqual(1, n);
 
             n = 0;
-            foreach (string s in graph.GetDependees(dependee))
+            foreach (string s in graph.GetDependees(dependent))
             {
-                Assert.AreEqual(dependent, s);
+                Assert.AreEqual(dependee, s);
                 n++;
             }
             Assert.AreEqual(1, n);

@@ -207,36 +207,36 @@ namespace Dependencies
             if (s != null && t != null)
             {
                 // new:
-                DependencyNode coffee;
-                DependencyNode adam;
+                DependencyNode dependee;
+                DependencyNode dependent;
 
                 if (nodes.ContainsKey(s))
                 {
-                    coffee = nodes[s];
+                    dependee = nodes[s];
                 }
                 else
                 {
-                    coffee = new DependencyNode(s);
-                    nodes.Add(s, coffee);
+                    dependee = new DependencyNode(s);
+                    nodes.Add(s, dependee);
                 }
 
                 if (nodes.ContainsKey(t))
                 {
-                    adam = nodes[t];
+                    dependent = nodes[t];
                 }
                 else
                 {
-                    adam = new DependencyNode(t);
-                    nodes.Add(t, adam);
+                    dependent = new DependencyNode(t);
+                    nodes.Add(t, dependent);
                 }
 
-                if (!coffee.MyDependents.ContainsKey(t))
+                if (!dependee.MyDependents.ContainsKey(t))
                 {
-                    coffee.MyDependents.Add(t, adam);
+                    dependee.MyDependents.Add(t, dependent);
                 }
-                if (!adam.MyDependees.ContainsKey(s))
+                if (!dependent.MyDependees.ContainsKey(s))
                 {
-                    adam.MyDependees.Add(s, coffee);
+                    dependent.MyDependees.Add(s, dependee);
                 }
             }
             else
@@ -256,8 +256,8 @@ namespace Dependencies
             {
                 if (nodes.ContainsKey(s) && nodes.ContainsKey(t))
                 {
-                    nodes[s].RemoveDependee(t);
-                    nodes[t].RemoveDependent(s);
+                    nodes[s].MyDependents.Remove(t);
+                    nodes[t].MyDependees.Remove(s);
 
                     // if that was the last dependency the node was involved in, get
                     // rid of it to free up memory
@@ -411,30 +411,6 @@ namespace Dependencies
             myDependents = new Dictionary<string, DependencyNode>();
             myDependees = new Dictionary<string, DependencyNode>();
         }
-
-        /// <summary>
-        /// If this node does not have (key) in myDependents, the node with key (key)
-        /// is added to myDependents; else, does nothing.
-        /// </summary>
-        //public void IsDependentOn(string key, DependencyNode dependee)
-        //{
-        //    if (!myDependents.ContainsKey(key)) // dependent isn't already in MyDependents
-        //    {
-        //        myDependents.Add(key, dependee);
-        //    }
-        //}
-
-        ///// <summary>
-        ///// If this node does not have (key) in myDependees, the node with key (key)
-        ///// is added to myDependees; else, does nothing.
-        ///// </summary>
-        //public void IsDependeeOf(string key, DependencyNode dependent)
-        //{
-        //    if (!myDependees.ContainsKey(key)) // dependent isn't already in MyDependents
-        //    {
-        //        myDependees.Add(key, dependent);
-        //    }
-        //}
 
         /// <summary>
         /// If this node has (key) in myDependents, the node with key (key)
