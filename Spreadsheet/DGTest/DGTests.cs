@@ -55,8 +55,66 @@ namespace DGTest
         }
 
         /// <summary>
+        /// Ensures ReplaceDependents and ReplaceDependees function as intended with a few
+        /// dependencies.
+        /// </summary>
+        [TestMethod]
+        public void TestReplaceSmall()
+        {
+            DependencyGraph graph = new DependencyGraph();
+
+            // what I'm dependent on
+            string aa = "tea";
+            string ab = "philosophy";
+            string ac = "free time";
+            // who they're dependees of
+            string dependent = "Adam";
+            graph.AddDependency(aa, dependent);
+            graph.AddDependency(ab, dependent);
+            graph.AddDependency(ac, dependent);
+
+            // what I'll be dependent on by the time I finish my major
+            string[] replace = { "coffee", "engineering", "productivity" };
+            graph.ReplaceDependees(dependent, replace);
+
+            Assert.AreEqual(3, graph.Size);
+            int i = 0;
+            foreach (string s in graph.GetDependees(dependent))
+            {
+                Assert.AreEqual(replace[i], s);
+                i++;
+            }
+            Assert.AreEqual(3, i);
+
+            string[] replace2 = { "everyone", "on", "the", "earth" };
+            graph.ReplaceDependents(replace[0], replace2);
+
+            Assert.AreEqual(6, graph.Size);
+            i = 0;
+            foreach (string s in graph.GetDependents(replace[0]))
+            {
+                Assert.IsTrue(EqualsOne(s, replace2));
+                i++;
+            }
+            Assert.AreEqual(4, i);
+        }
+
+        /// <summary>
+        /// Checks to see if (actual) matches at least one of the strings in (strings).
+        /// Used as a helper method in TestReplaceSmall
+        /// </summary>
+        private bool EqualsOne(string actual, params string[] strings)
+        {
+            foreach (string s in strings)
+            {
+                if (s == actual) { return true; }
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Ensures that all methods work as intended with many dependencies.
-        /// May be called a "stress test".
+        /// TestAddMany is, loosely, a stress test.
         /// </summary>
         [TestMethod]
         public void TestAddMany()
@@ -132,63 +190,6 @@ namespace DGTest
                     Assert.AreEqual(2, n);
                 }
             }
-        }
-
-        /// <summary>
-        /// Ensures ReplaceDependents and ReplaceDependees function as intended with a few
-        /// dependencies.
-        /// </summary>
-        [TestMethod]
-        public void TestReplaceSmall()
-        {
-            DependencyGraph graph = new DependencyGraph();
-
-            // what I'm dependent on
-            string aa = "tea";
-            string ab = "philosophy";
-            string ac = "free time";
-            // who they're dependees of
-            string dependent = "Adam";
-            graph.AddDependency(aa, dependent);
-            graph.AddDependency(ab, dependent);
-            graph.AddDependency(ac, dependent);
-
-            // what I'll be dependent on by the time I finish my major
-            string[] replace = { "coffee", "engineering", "productivity" };
-            graph.ReplaceDependees(dependent, replace);
-
-            Assert.AreEqual(3, graph.Size);
-            int i = 0;
-            foreach (string s in graph.GetDependees(dependent))
-            {
-                Assert.AreEqual(replace[i], s);
-                i++;
-            }
-            Assert.AreEqual(3, i);
-
-            string[] replace2 = { "everyone", "on", "the", "earth"};
-            graph.ReplaceDependents(replace[0], replace2);
-
-            Assert.AreEqual(6, graph.Size);
-            i = 0;
-            foreach (string s in graph.GetDependents(replace[0]))
-            {
-                Assert.IsTrue(EqualsOne(s, replace2));
-                i++;
-            }
-            Assert.AreEqual(4, i);
-        }
-
-        /// <summary>
-        /// Checks to see if (actual) matches at least one of the strings in (strings).
-        /// </summary>
-        private bool EqualsOne(string actual, params string[] strings)
-        {
-            foreach (string s in strings)
-            {
-                if (s == actual) { return true; }
-            }
-            return false;
         }
     }
 

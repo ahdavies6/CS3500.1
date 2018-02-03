@@ -186,7 +186,7 @@ namespace Dependencies
         }
 
         /// <summary>
-        /// Enumerates dependents(s). Handles yield return so public GetDependents
+        /// Enumerates dependents(s). Handles yield return so public GetDependees
         /// can (non-yield) return null.
         /// </summary>
         private IEnumerable<string> GetDependeesInternal(string s)
