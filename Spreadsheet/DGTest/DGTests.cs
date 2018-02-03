@@ -96,7 +96,6 @@ namespace DGTest
             {
                 string iString = i.ToString();
                 Assert.IsTrue(graph.HasDependents(iString));
-                //Assert.IsTrue(graph.HasDependees(iString));
 
                 int a = 0;
                 foreach (string s in graph.GetDependents(iString))
@@ -110,25 +109,27 @@ namespace DGTest
                 }
             }
 
-            for (int i = 0; i < 100; i++)
-            {
-                for (int j = 0; j < 50; j++)
-                {
-                    // replace the dependents of all even dependees with "please work"
-                    graph.ReplaceDependents((i* 2).ToString(), new string[] { "please work" });
-                }
-            }
-
-            Assert.AreEqual(5000, graph.Size);
+            string[] rString = { "please", "work" };
 
             for (int i = 0; i < 100; i++)
             {
                 if (i % 2 == 0)
                 {
+                    graph.ReplaceDependents(i.ToString(), rString);
+                }
+            }
+
+            for (int i = 0; i < 100; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    n = 0;
                     foreach (string s in graph.GetDependents(i.ToString()))
                     {
-                        Assert.AreEqual("please work", s);
+                        Assert.IsTrue(rString[0] == s || rString[1] == s);
+                        n++;
                     }
+                    Assert.AreEqual(2, n);
                 }
             }
         }
@@ -137,42 +138,58 @@ namespace DGTest
         /// Ensures ReplaceDependents and ReplaceDependees function as intended with a few
         /// dependencies.
         /// </summary>
-        //[TestMethod]
-        //public void TestReplaceSmall()
-        //{
-        //    DependencyGraph graph = new DependencyGraph();
+        [TestMethod]
+        public void TestReplaceSmall()
+        {
+            DependencyGraph graph = new DependencyGraph();
 
-        //    // what I'm dependent on
-        //    string aa = "tea";
-        //    string ab = "philosophy";
-        //    string ac = "free time";
-        //    // who they're dependees of
-        //    string dependee = "Adam";
-        //    graph.AddDependency(aa, dependee);
-        //    graph.AddDependency(ab, dependee);
-        //    graph.AddDependency(ac, dependee);
+            // what I'm dependent on
+            string aa = "tea";
+            string ab = "philosophy";
+            string ac = "free time";
+            // who they're dependees of
+            string dependent = "Adam";
+            graph.AddDependency(aa, dependent);
+            graph.AddDependency(ab, dependent);
+            graph.AddDependency(ac, dependent);
 
-        //    // what I'll be dependent on by the time I finish my major
-        //    string[] replace = { "coffee", "engineering", "productivity" };
-        //    graph.ReplaceDependents(dependee, replace);
+            // what I'll be dependent on by the time I finish my major
+            string[] replace = { "coffee", "engineering", "productivity" };
+            graph.ReplaceDependees(dependent, replace);
 
-        //    Assert.AreEqual(3, graph.Size);
-        //    int i = 0;
-        //    // soon:
-        //    //foreach (string s in graph.GetDependents(dependee))
-        //    // now:
-        //    foreach (string s in graph.GetDependees(dependee))
-        //    {
-        //        Assert.AreEqual(replace[i], s);
-        //        i++;
-        //    }
-        //    Assert.AreEqual(3, i);
+            Assert.AreEqual(3, graph.Size);
+            int i = 0;
+            foreach (string s in graph.GetDependees(dependent))
+            {
+                Assert.AreEqual(replace[i], s);
+                i++;
+            }
+            Assert.AreEqual(3, i);
 
-        //    //string ba = "knowledge";
-        //    //string bb = "experience";
-        //    //string bc = "";
-        //    //graph.AddDependency(dependnet,)
-        //}
+            string[] replace2 = { "everyone", "on", "the", "earth"};
+            graph.ReplaceDependents(replace[0], replace2);
+
+            Assert.AreEqual(6, graph.Size);
+            i = 0;
+            foreach (string s in graph.GetDependents(replace[0]))
+            {
+                Assert.IsTrue(EqualsOne(s, replace2));
+                i++;
+            }
+            Assert.AreEqual(4, i);
+        }
+
+        /// <summary>
+        /// Checks to see if (actual) matches at least one of the strings in (strings).
+        /// </summary>
+        private bool EqualsOne(string actual, params string[] strings)
+        {
+            foreach (string s in strings)
+            {
+                if (s == actual) { return true; }
+            }
+            return false;
+        }
     }
 
     [TestClass]

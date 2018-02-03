@@ -288,17 +288,12 @@ namespace Dependencies
             {
                 if (HasDependents(s))
                 {
-                    //List<string> keys = new List<string>();
-                    //foreach (string key in GetDependents(s))
-                    //{
-                    //    keys.Add(key);
-                    //}
-                    //foreach (string key in keys)
-                    //{
-                    //    RemoveDependency(key, s);
-                    //}
-                    //var keys = (Dictionary<string, DependencyNode>.KeyCollection)GetDependents(s);
+                    List<string> keys = new List<string>();
                     foreach (string key in GetDependents(s))
+                    {
+                        keys.Add(key);
+                    }
+                    foreach (string key in keys)
                     {
                         RemoveDependency(s, key);
                     }
@@ -332,17 +327,12 @@ namespace Dependencies
             {
                 if (HasDependees(t))
                 {
-                    //List<string> keys = new List<string>();
-                    //foreach (string key in GetDependees(t))
-                    //{
-                    //    keys.Add(key);
-                    //}
-                    //foreach (string key in keys)
-                    //{
-                    //    RemoveDependency(t, key);
-                    //}
-                    //var keys = (Dictionary<string, DependencyNode>.KeyCollection)GetDependees(t);
+                    List<string> keys = new List<string>();
                     foreach (string key in GetDependees(t))
+                    {
+                        keys.Add(key);
+                    }
+                    foreach (string key in keys)
                     {
                         RemoveDependency(key, t);
                     }
