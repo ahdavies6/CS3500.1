@@ -16,43 +16,42 @@ namespace DGTest
         public void TestOne()
         {
             DependencyGraph graph = new DependencyGraph();
-            string dependent = "Adam";
             string dependee = "coffee";
-            graph.AddDependency(dependent, dependee);
+            string dependent = "Adam";
+            graph.AddDependency(dependee, dependent);
 
             Assert.AreEqual(1, graph.Size);
-            Assert.IsTrue(graph.HasDependents(dependee));
-            Assert.IsTrue(!graph.HasDependees(dependee));
-            Assert.IsTrue(graph.HasDependees(dependent));
             Assert.IsTrue(!graph.HasDependents(dependent));
+            Assert.IsTrue(graph.HasDependees(dependent));
+            Assert.IsTrue(!graph.HasDependees(dependee));
+            Assert.IsTrue(graph.HasDependents(dependee));
 
             int n = 0;
-            foreach (string s in graph.GetDependents(dependee))
-            {
-                Assert.AreEqual(dependent, s);
-                n++;
-            }
-            Assert.AreEqual(1, n);
-
-            n = 0;
-            foreach (string s in graph.GetDependees(dependent))
+            foreach (string s in graph.GetDependents(dependent))
             {
                 Assert.AreEqual(dependee, s);
                 n++;
             }
             Assert.AreEqual(1, n);
 
-            graph.RemoveDependency(dependent, dependee);
-            Assert.AreEqual(0, graph.Size);
-            Assert.IsTrue(!graph.HasDependents(dependee));
-            Assert.IsTrue(!graph.HasDependees(dependee));
-            Assert.IsTrue(!graph.HasDependees(dependent));
-            Assert.IsTrue(!graph.HasDependents(dependent));
-
+            n = 0;
             foreach (string s in graph.GetDependees(dependee))
             {
-                Assert.IsNull(s);
+                Assert.AreEqual(dependent, s);
+                n++;
             }
+            Assert.AreEqual(1, n);
+
+            graph.RemoveDependency(dependee, dependent);
+            Assert.AreEqual(0, graph.Size);
+            Assert.IsTrue(!graph.HasDependents(dependent));
+            Assert.IsTrue(!graph.HasDependees(dependent));
+            Assert.IsTrue(!graph.HasDependees(dependee));
+            Assert.IsTrue(!graph.HasDependents(dependee));
+            Assert.IsNull(graph.GetDependents(dependent));
+            Assert.IsNull(graph.GetDependees(dependee));
+            Assert.IsNull(graph.GetDependents(dependee));
+            Assert.IsNull(graph.GetDependees(dependent));
         }
 
         /// <summary>
@@ -152,25 +151,37 @@ namespace DGTest
         public void TestReplaceSmall()
         {
             DependencyGraph graph = new DependencyGraph();
-            string dependent = "Adam";
-            string a = "coffee";
-            string b = "philosophy";
-            string c = "UnitTests";
-            graph.AddDependency(dependent, a);
-            graph.AddDependency(dependent, b);
-            graph.AddDependency(dependent, c);
 
-            string[] replace = { "tea", "engineering", "irresponsible coding" };
-            //graph.ReplaceDependents(dependent, replace);
-            graph.ReplaceDependees(dependent, replace);
+            // what I'm dependent on
+            string aa = "tea";
+            string ab = "philosophy";
+            string ac = "free time";
+            // who they're dependees of
+            string dependee = "Adam";
+            graph.AddDependency(aa, dependee);
+            graph.AddDependency(ab, dependee);
+            graph.AddDependency(ac, dependee);
+
+            // what I'll be dependent on by the time I finish my major
+            string[] replace = { "coffee", "engineering", "productivity" };
+            graph.ReplaceDependents(dependee, replace);
 
             Assert.AreEqual(3, graph.Size);
             int i = 0;
-            foreach (string s in graph.GetDependents(dependent))
+            // soon:
+            //foreach (string s in graph.GetDependents(dependee))
+            // now:
+            foreach (string s in graph.GetDependees(dependee))
             {
                 Assert.AreEqual(replace[i], s);
                 i++;
             }
+            Assert.AreEqual(3, i);
+
+            //string ba = "knowledge";
+            //string bb = "experience";
+            //string bc = "";
+            //graph.AddDependency(dependnet,)
         }
     }
 
@@ -248,12 +259,12 @@ namespace DGTest
         /// the IEnumerable argument is null.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [ExpectedException(typeof(NullReferenceException))]
         public void TestNull7()
         {
             DependencyGraph graph = new DependencyGraph();
-            string[] fine = { "hi", "I'm", "fine" };
-            graph.ReplaceDependents(null, fine);
+            string[] nuller = { "hi", null, "am broken" };
+            graph.ReplaceDependents("hi", nuller);
         }
 
         /// <summary>

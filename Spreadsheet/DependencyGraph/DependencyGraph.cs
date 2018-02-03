@@ -61,7 +61,13 @@ namespace Dependencies
                     n += node.Size;
                 }
                 // division by two because, for each node N representing all dependents s of t,
-                // there is a mirror node N* representing all dependees t of s
+                // there is a mirror node N* representing all dependees t of s.
+                // (In other words, each dependency involves a dependent and a dependee. DependencyGraph
+                // represents dependencies as relationships between nodes, where each dependency
+                // involves a dependent and a dependency. In one dependency, there is a dependent
+                // and a dependee; these are each represented in DependencyNodes, with each of two nodes
+                // representing the same dependency. This means each dependency is represented
+                // twice.)
                 return n / 2;
             }
         }
@@ -70,7 +76,6 @@ namespace Dependencies
         /// All the nodes (vertices) in the DependencyGraph.
         /// </summary>
         private Dictionary<string, DependencyNode> nodes;
-
 
         /// <summary>
         /// Creates a DependencyGraph containing no dependencies.
@@ -131,11 +136,30 @@ namespace Dependencies
         {
             if (s != null)
             {
-                return nodes[s].MyDependents.Keys;
+                if (nodes.ContainsKey(s))
+                {
+                    return GetDependentsInternal(s);
+                }
+                else
+                {
+                    return null;
+                }
             }
             else
             {
                 throw new ArgumentNullException();
+            }
+        }
+
+        /// <summary>
+        /// Enumerates dependents(s). Handles yield return so public GetDependents
+        /// can (non-yield) return null.
+        /// </summary>
+        private IEnumerable<string> GetDependentsInternal(string s)
+        {
+            foreach (string key in nodes[s].MyDependents.Keys)
+            {
+                yield return key;
             }
         }
 
@@ -146,11 +170,30 @@ namespace Dependencies
         {
             if (s != null)
             {
-                return nodes[s].MyDependees.Keys;
+                if (nodes.ContainsKey(s))
+                {
+                    return GetDependeesInternal(s);
+                }
+                else
+                {
+                    return null;
+                }
             }
             else
             {
                 throw new ArgumentNullException();
+            }
+        }
+
+        /// <summary>
+        /// Enumerates dependents(s). Handles yield return so public GetDependents
+        /// can (non-yield) return null.
+        /// </summary>
+        private IEnumerable<string> GetDependeesInternal(string s)
+        {
+            foreach (string key in nodes[s].MyDependees.Keys)
+            {
+                yield return key;
             }
         }
 
@@ -163,31 +206,38 @@ namespace Dependencies
         {
             if (s != null && t != null)
             {
-                DependencyNode dependent;
-                DependencyNode dependee;
+                // new:
+                DependencyNode coffee;
+                DependencyNode adam;
 
                 if (nodes.ContainsKey(s))
                 {
-                    dependent = nodes[s];
+                    coffee = nodes[s];
                 }
                 else
                 {
-                    dependent = new DependencyNode(s);
-                    nodes.Add(s, dependent);
+                    coffee = new DependencyNode(s);
+                    nodes.Add(s, coffee);
                 }
 
                 if (nodes.ContainsKey(t))
                 {
-                    dependee = nodes[t];
+                    adam = nodes[t];
                 }
                 else
                 {
-                    dependee = new DependencyNode(t);
-                    nodes.Add(t, dependee);
+                    adam = new DependencyNode(t);
+                    nodes.Add(t, adam);
                 }
 
-                dependent.AddDependee(t, dependee);
-                dependee.AddDependent(s, dependent);
+                if (!coffee.MyDependents.ContainsKey(t))
+                {
+                    coffee.MyDependents.Add(t, adam);
+                }
+                if (!adam.MyDependees.ContainsKey(s))
+                {
+                    adam.MyDependees.Add(s, coffee);
+                }
             }
             else
             {
@@ -208,6 +258,17 @@ namespace Dependencies
                 {
                     nodes[s].RemoveDependee(t);
                     nodes[t].RemoveDependent(s);
+
+                    // if that was the last dependency the node was involved in, get
+                    // rid of it to free up memory
+                    if (nodes[s].Size == 0)
+                    {
+                        nodes.Remove(s);
+                    }
+                    if (nodes[t].Size == 0)
+                    {
+                        nodes.Remove(t);
+                    }
                 }
             }
             else
@@ -225,16 +286,23 @@ namespace Dependencies
         {
             if (s != null)
             {
-                List<string> keys = new List<string>();
-                foreach (string key in GetDependees(s))
+                if (HasDependents(s))
                 {
-                    keys.Add(key);
+                    //List<string> keys = new List<string>();
+                    //foreach (string key in GetDependents(s))
+                    //{
+                    //    keys.Add(key);
+                    //}
+                    //foreach (string key in keys)
+                    //{
+                    //    RemoveDependency(key, s);
+                    //}
+                    //var keys = (Dictionary<string, DependencyNode>.KeyCollection)GetDependents(s);
+                    foreach (string key in GetDependents(s))
+                    {
+                        RemoveDependency(s, key);
+                    }
                 }
-                foreach (string key in keys)
-                {
-                    RemoveDependency(key, s);
-                }
-
                 foreach (string t in newDependents)
                 {
                     if (t != null)
@@ -262,16 +330,23 @@ namespace Dependencies
         {
             if (t != null)
             {
-                List<string> keys = new List<string>();
-                foreach (string key in GetDependees(t))
+                if (HasDependees(t))
                 {
-                    keys.Add(key);
+                    //List<string> keys = new List<string>();
+                    //foreach (string key in GetDependees(t))
+                    //{
+                    //    keys.Add(key);
+                    //}
+                    //foreach (string key in keys)
+                    //{
+                    //    RemoveDependency(t, key);
+                    //}
+                    //var keys = (Dictionary<string, DependencyNode>.KeyCollection)GetDependees(t);
+                    foreach (string key in GetDependees(t))
+                    {
+                        RemoveDependency(key, t);
+                    }
                 }
-                foreach (string key in keys)
-                {
-                    RemoveDependency(t, key);
-                }
-
                 foreach (string s in newDependees)
                 {
                     if (s != null)
@@ -312,7 +387,7 @@ namespace Dependencies
         /// <summary>
         /// All dependents of this node.
         /// </summary>
-        public Dictionary<string, DependencyNode> MyDependents
+        public Dictionary<string, DependencyNode> MyDependees
         {
             get { return myDependents; }
         }
@@ -321,7 +396,7 @@ namespace Dependencies
         /// <summary>
         /// All dependees of this node.
         /// </summary>
-        public Dictionary<string, DependencyNode> MyDependees
+        public Dictionary<string, DependencyNode> MyDependents
         {
             get { return myDependees; }
         }
@@ -341,25 +416,25 @@ namespace Dependencies
         /// If this node does not have (key) in myDependents, the node with key (key)
         /// is added to myDependents; else, does nothing.
         /// </summary>
-        public void AddDependent(string key, DependencyNode dependee)
-        {
-            if (!myDependents.ContainsKey(key)) // dependent isn't already in MyDependents
-            {
-                myDependents.Add(key, dependee);
-            }
-        }
+        //public void IsDependentOn(string key, DependencyNode dependee)
+        //{
+        //    if (!myDependents.ContainsKey(key)) // dependent isn't already in MyDependents
+        //    {
+        //        myDependents.Add(key, dependee);
+        //    }
+        //}
 
-        /// <summary>
-        /// If this node does not have (key) in myDependees, the node with key (key)
-        /// is added to myDependees; else, does nothing.
-        /// </summary>
-        public void AddDependee(string key, DependencyNode dependent)
-        {
-            if (!myDependees.ContainsKey(key)) // dependent isn't already in MyDependents
-            {
-                myDependees.Add(key, dependent);
-            }
-        }
+        ///// <summary>
+        ///// If this node does not have (key) in myDependees, the node with key (key)
+        ///// is added to myDependees; else, does nothing.
+        ///// </summary>
+        //public void IsDependeeOf(string key, DependencyNode dependent)
+        //{
+        //    if (!myDependees.ContainsKey(key)) // dependent isn't already in MyDependents
+        //    {
+        //        myDependees.Add(key, dependent);
+        //    }
+        //}
 
         /// <summary>
         /// If this node has (key) in myDependents, the node with key (key)
