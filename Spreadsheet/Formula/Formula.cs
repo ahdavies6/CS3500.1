@@ -26,6 +26,7 @@ namespace Formulas
         /// </summary>
         private List<string> equation;
 
+        // Several Regex patterns, to be used throughout the class
         private const string pFull = @"^\($|^\)$|^[\+\-*/]$|^[a-zA-Z][0-9a-zA-Z]*$|^(?:\d+\.\d*|\d*\.\d+|\d+)(?:e[\+-]?\d+)?$";
         private const string pOpen = @"\(";
         private const string pClose = @"\)";
@@ -173,7 +174,10 @@ namespace Formulas
             {
                 if (MatchThese(token, pNumber))
                 {
-                    double val = Int32.Parse(token);
+                    if (!Double.TryParse(token, out double val))
+                    {
+                        throw new FormulaEvaluationException("Invalid token: " + token);
+                    }
 
                     if (oStack.Count > 0)
                     {
@@ -258,21 +262,26 @@ namespace Formulas
                 {
                     if (oStack.Count > 0)
                     {
-                        if (oStack.Peek() == "+")
+                        if (token == "+" || token == "-")
                         {
-                            double v1 = vStack.Pop();
-                            double v2 = vStack.Pop();
-                            oStack.Pop();
-                            vStack.Push(v1 + v2);
-                        }
-                        else if (oStack.Peek() == "-")
-                        {
-                            double subThis = vStack.Pop();
-                            double subFrom = vStack.Pop();
-                            oStack.Pop();
-                            vStack.Push(subFrom - subThis);
+                            if (oStack.Peek() == "+")
+                            {
+                                double v1 = vStack.Pop();
+                                double v2 = vStack.Pop();
+                                oStack.Pop();
+                                vStack.Push(v1 + v2);
+                            }
+                            else if (oStack.Peek() == "-")
+                            {
+                                double subThis = vStack.Pop();
+                                double subFrom = vStack.Pop();
+                                oStack.Pop();
+                                vStack.Push(subFrom - subThis);
+                            }
                         }
                     }
+                    // This is all that's done for division and multiplication, and is
+                    // also done after the previous operations for addition and subtraction.
                     oStack.Push(token);
                 }
                 else if (MatchThese(token, pOpen))
@@ -298,6 +307,9 @@ namespace Formulas
                             vStack.Push(subFrom - subThis);
                         }
                     }
+                    // This should be done before division or multiplication, and is
+                    // also all that's left to do after the previous operations for addition
+                    // and subtraction.
                     oStack.Pop();
 
                     if (oStack.Count > 0)
@@ -312,9 +324,16 @@ namespace Formulas
                         else if (oStack.Peek() == "/")
                         {
                             double denominator = vStack.Pop();
-                            double numerator = vStack.Pop();
-                            oStack.Pop();
-                            vStack.Push(numerator / denominator);
+                            if (denominator != 0)
+                            {
+                                double numerator = vStack.Pop();
+                                oStack.Pop();
+                                vStack.Push(numerator / denominator);
+                            }
+                            else
+                            {
+                                throw new FormulaEvaluationException("Cannot divide by zero.");
+                            }
                         } 
                     }
                 }
