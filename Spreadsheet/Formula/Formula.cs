@@ -18,7 +18,7 @@ namespace Formulas
     /// the four binary operator symbols +, -, *, and /.  (The unary operators + and -
     /// are not allowed.)
     /// </summary>
-    public class Formula
+    public struct Formula
     {
         /// <summary>
         /// Instance variable infix, initialized in Formula's constructor, holds a standard infix
@@ -33,6 +33,18 @@ namespace Formulas
         private const string pOperator = @"[\+\-*/]";
         private const string pVariable = @"[a-zA-Z][0-9a-zA-Z]*";
         private const string pNumber = @"(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?";
+
+        /// <summary>
+        /// A Lookup method is one that maps some strings to double values.  Given a string,
+        /// such a function can either return a double (meaning that the string maps to the
+        /// double) or throw an UndefinedVariableException (meaning that the string is unmapped 
+        /// to a value). Exactly how a Lookup method decides which strings map to doubles and which
+        /// don't is up to the implementation of the method.
+        /// </summary>
+        public delegate double Lookup(string var);
+
+        public delegate string Normalizer(string s);
+        public delegate bool Validator(string s);
 
         /// <summary>
         /// Creates a Formula from a string that consists of a standard infix expression composed
@@ -89,7 +101,7 @@ namespace Formulas
                         }
                     }
                     if (i < equation.Count - 1)
-                        {
+                    {
                         // Any token immediately following an opening parenthesis or operator must be
                         // a number, variable, or opening parenthesis
                         if (MatchThese(equation[i], pOpen, pOperator))
@@ -147,14 +159,10 @@ namespace Formulas
             }
         }
 
-        /// <summary>
-        /// A Lookup method is one that maps some strings to double values.  Given a string,
-        /// such a function can either return a double (meaning that the string maps to the
-        /// double) or throw an UndefinedVariableException (meaning that the string is unmapped 
-        /// to a value). Exactly how a Lookup method decides which strings map to doubles and which
-        /// don't is up to the implementation of the method.
-        /// </summary>
-        public delegate double Lookup(string var);
+        public Formula(string formula, Normalizer normalizer, Validator validator)
+        {
+
+        }
 
         /// <summary>
         /// Evaluates this Formula, using the Lookup delegate to determine the values of variables.  The
