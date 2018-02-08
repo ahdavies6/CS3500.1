@@ -26,12 +26,12 @@ namespace Formulas
         /// </summary>
         private List<string> equation;
 
-        public readonly string pFull = @"^\($|^\)$|^[\+\-*/]$|^[a-zA-Z][0-9a-zA-Z]*$|^(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?$";
-        public readonly string pOpen = @"\(";
-        public readonly string pClose = @"\)";
-        public readonly string pOperator = @"[\+\-*/]";
-        public readonly string pVariable = @"[a-zA-Z][0-9a-zA-Z]*";
-        public readonly string pNumber = @"(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?";
+        private const string pFull = @"^\($|^\)$|^[\+\-*/]$|^[a-zA-Z][0-9a-zA-Z]*$|^(?:\d+\.\d*|\d*\.\d+|\d+)(?:e[\+-]?\d+)?$";
+        private const string pOpen = @"\(";
+        private const string pClose = @"\)";
+        private const string pOperator = @"[\+\-*/]";
+        private const string pVariable = @"[a-zA-Z][0-9a-zA-Z]*";
+        private const string pNumber = @"(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?";
 
         /// <summary>
         /// Creates a Formula from a string that consists of a standard infix expression composed
@@ -125,18 +125,22 @@ namespace Formulas
             {
                 throw new FormulaFormatException("Not all parenthesis have been closed.");
             }
-            // The first token of a formula must be a number, variable, or opening parenthesis
-            if (!MatchThese(equation[0], pNumber, pVariable, pOpen))
+            // Cannot test beginning/end token with empty equation
+            if (equation.Count > 0)
             {
-                throw new FormulaFormatException("Formula must begin with a number, variable, or opening parenthesis.");
-            }
-            // The last token of a formula must be a number, variable, or closing parenthesis
-            if (!MatchThese(equation[equation.Count - 1], pNumber, pVariable, pClose))
-            {
-                throw new FormulaFormatException("Formula must end with a number, variable, or closing parenthesis.");
+                // The first token of a formula must be a number, variable, or opening parenthesis
+                if (!MatchThese(equation[0], pNumber, pVariable, pOpen))
+                {
+                    throw new FormulaFormatException("Formula must begin with a number, variable, or opening parenthesis.");
+                }
+                // The last token of a formula must be a number, variable, or closing parenthesis
+                if (!MatchThese(equation[equation.Count - 1], pNumber, pVariable, pClose))
+                {
+                    throw new FormulaFormatException("Formula must end with a number, variable, or closing parenthesis.");
+                }
             }
             // There must be at least one token
-            if (equation.Count == 0)
+            else
             {
                 throw new FormulaFormatException("Formula must have at least one valid token.");
             }
@@ -171,8 +175,53 @@ namespace Formulas
                 {
                     double val = Int32.Parse(token);
 
-                    if (val != 0)
+                    if (oStack.Count > 0)
                     {
+                        if (oStack.Peek() == "*")
+                        {
+                            oStack.Pop();
+                            double multBy = vStack.Pop();
+                            vStack.Push((val * multBy));
+                        }
+                        else if (oStack.Peek() == "/")
+                        {
+                            if (val != 0)
+                            {
+                                oStack.Pop();
+                                double numerator = vStack.Pop();
+                                vStack.Push((numerator / val));
+                            }
+                            else
+                            {
+                                throw new FormulaEvaluationException("Cannot divide by zero.");
+                            }
+                        }
+                        else
+                        {
+                            vStack.Push(val);
+                        }
+                    }
+                    else
+                    {
+                        vStack.Push(val);
+                    }
+                }
+                else if (MatchThese(token, pVariable))
+                {
+                    {
+                        double val;
+
+                        // Checks whether lookup returned a value
+                        try
+                        {
+                            val = lookup(token);
+                        }
+                        catch (UndefinedVariableException e)
+                        {
+                            throw new FormulaEvaluationException(e.Source + " threw an " +
+                                "UndefinedVariableException.");
+                        }
+
                         if (oStack.Count > 0)
                         {
                             if (oStack.Peek() == "*")
@@ -183,9 +232,16 @@ namespace Formulas
                             }
                             else if (oStack.Peek() == "/")
                             {
-                                oStack.Pop();
-                                double numerator = vStack.Pop();
-                                vStack.Push((numerator / val));
+                                if (val != 0)
+                                {
+                                    oStack.Pop();
+                                    double numerator = vStack.Pop();
+                                    vStack.Push((numerator / val));
+                                }
+                                else
+                                {
+                                    throw new FormulaEvaluationException("Cannot divide by zero.");
+                                }
                             }
                             else
                             {
@@ -195,47 +251,6 @@ namespace Formulas
                         else
                         {
                             vStack.Push(val);
-                        }
-                    }
-                    else
-                    {
-                        throw new FormulaEvaluationException("Cannot divide by zero.");
-                    }
-                }
-                else if (MatchThese(token, pVariable))
-                {
-                    {
-                        double val = lookup(token);
-
-                        if (val != 0)
-                        {
-                            if (oStack.Count > 0)
-                            {
-                                if (oStack.Peek() == "*")
-                                {
-                                    oStack.Pop();
-                                    double multBy = vStack.Pop();
-                                    vStack.Push((val * multBy));
-                                }
-                                else if (oStack.Peek() == "/")
-                                {
-                                    oStack.Pop();
-                                    double numerator = vStack.Pop();
-                                    vStack.Push((numerator / val));
-                                }
-                                else
-                                {
-                                    vStack.Push(val);
-                                }
-                            }
-                            else
-                            {
-                                vStack.Push(val);
-                            }
-                        }
-                        else
-                        {
-                            throw new FormulaEvaluationException("Cannot divide by zero.");
                         }
                     }
                 }
