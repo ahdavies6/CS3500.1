@@ -43,7 +43,14 @@ namespace Formulas
         /// </summary>
         public delegate double Lookup(string var);
 
+        /// <summary>
+        /// Given a string, converts all variables into a canonical form.
+        /// </summary>
         public delegate string Normalizer(string s);
+
+        /// <summary>
+        /// Places extra restrictions on the validity of variables; returns whether variable meets them.
+        /// </summary>
         public delegate bool Validator(string s);
 
         /// <summary>
@@ -159,9 +166,33 @@ namespace Formulas
             }
         }
 
-        public Formula(string formula, Normalizer normalizer, Validator validator)
+        /// <summary>
+        /// Creates a Formula from a string that consists of a standard infix expression composed
+        /// from non-negative floating-point numbers (using C#-like syntax for double/int literals), 
+        /// variable symbols (a letter followed by zero or more letters and/or digits), left and right
+        /// parentheses, and the four binary operator symbols +, -, *, and /.  White space is
+        /// permitted between tokens, but is not required.
+        /// 
+        /// Uses Normalizer to canonize variables, and Validator to impose additional restrictions on
+        /// the validity of a variable.
+        /// 
+        /// If the formula is syntacticaly invalid, throws a FormulaFormatException with an 
+        /// explanatory Message.
+        /// </summary>
+        public Formula(string formula, Normalizer normalizer, Validator validator) : this(formula)
         {
+            for (int i = 0; i < equation.Count; i++)
+            {
+                if (MatchThese(equation[i], pVariable))
+                {
+                    equation[i] = normalizer(equation[i]);
 
+                    if (!validator(equation[i]))
+                    {
+                        throw new FormulaFormatException("Formula did not meet validator requirements.");
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -175,6 +206,12 @@ namespace Formulas
         /// </summary>
         public double Evaluate(Lookup lookup)
         {
+            // In the case of a null constructor.
+            if (equation == null)
+            {
+                return 0;
+            }
+
             Stack<double> vStack = new Stack<double>(); // value stack
             Stack<string> oStack = new Stack<string>(); // operator stack
 
