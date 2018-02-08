@@ -172,45 +172,7 @@ namespace Formulas
 
             foreach (string token in equation)
             {
-                if (MatchThese(token, pNumber))
-                {
-                    if (!Double.TryParse(token, out double val))
-                    {
-                        throw new FormulaEvaluationException("Invalid token: " + token);
-                    }
-
-                    if (oStack.Count > 0)
-                    {
-                        if (oStack.Peek() == "*")
-                        {
-                            oStack.Pop();
-                            double multBy = vStack.Pop();
-                            vStack.Push((val * multBy));
-                        }
-                        else if (oStack.Peek() == "/")
-                        {
-                            if (val != 0)
-                            {
-                                oStack.Pop();
-                                double numerator = vStack.Pop();
-                                vStack.Push((numerator / val));
-                            }
-                            else
-                            {
-                                throw new FormulaEvaluationException("Cannot divide by zero.");
-                            }
-                        }
-                        else
-                        {
-                            vStack.Push(val);
-                        }
-                    }
-                    else
-                    {
-                        vStack.Push(val);
-                    }
-                }
-                else if (MatchThese(token, pVariable))
+                if (MatchThese(token, pVariable))
                 {
                     {
                         double val;
@@ -256,6 +218,44 @@ namespace Formulas
                         {
                             vStack.Push(val);
                         }
+                    }
+                }
+                else if (MatchThese(token, pNumber))
+                {
+                    if (!Double.TryParse(token, out double val))
+                    {
+                        throw new FormulaEvaluationException("Invalid token: " + token);
+                    }
+
+                    if (oStack.Count > 0)
+                    {
+                        if (oStack.Peek() == "*")
+                        {
+                            oStack.Pop();
+                            double multBy = vStack.Pop();
+                            vStack.Push((val * multBy));
+                        }
+                        else if (oStack.Peek() == "/")
+                        {
+                            if (val != 0)
+                            {
+                                oStack.Pop();
+                                double numerator = vStack.Pop();
+                                vStack.Push((numerator / val));
+                            }
+                            else
+                            {
+                                throw new FormulaEvaluationException("Cannot divide by zero.");
+                            }
+                        }
+                        else
+                        {
+                            vStack.Push(val);
+                        }
+                    }
+                    else
+                    {
+                        vStack.Push(val);
                     }
                 }
                 else if (MatchThese(token, pOperator))
@@ -369,7 +369,7 @@ namespace Formulas
         {
             foreach (string pattern in patterns)
             {
-                if (Regex.IsMatch(input, pattern, RegexOptions.IgnorePatternWhitespace))
+                if (Regex.IsMatch(input, "^" + pattern + "$", RegexOptions.IgnorePatternWhitespace))
                 {
                     return true;
                 }
