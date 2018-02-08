@@ -58,13 +58,10 @@ namespace Formulas
             int openParentheses = 0;
             int closeParentheses = 0;
 
-            //List<string> tokens = new List<string>();
-            //infix = "";
             equation = new List<string>();
 
             foreach (string token in GetTokens(formula))
             {
-                //tokens.Add(token);
                 equation.Add(token);
             }
 
@@ -73,16 +70,13 @@ namespace Formulas
                 // All tokens must be syntactically valid
                 if (Regex.IsMatch(equation[i], pFull, RegexOptions.IgnorePatternWhitespace))
                 {
-                    //infix = infix + infix[i];
-                    
-                    //if (tokens[i] == "(")
                     if (MatchThese(equation[i], pOpen))
                     {
                         openParentheses++;
                     }
+
                     // There must be no more closing parenthesis than opening parenthesis
                     // (while reading left to right)
-                    //if (tokens[i] == ")")
                     if (MatchThese(equation[i], pClose))
                     {
                         closeParentheses++;
@@ -97,10 +91,8 @@ namespace Formulas
                         {
                         // Any token immediately following an opening parenthesis or operator must be
                         // a number, variable, or opening parenthesis
-                        //if (Regex.IsMatch(tokens[i], @"[\+\-*/\(]"))
                         if (MatchThese(equation[i], pOpen, pOperator))
                         {
-                            //if (Regex.IsMatch(tokens[i+1], @"[\+\-*/\)]"))
                             if (!MatchThese(equation[i + 1], pNumber, pVariable, pOpen))
                             {
                                 throw new FormulaFormatException(
@@ -110,10 +102,8 @@ namespace Formulas
                         }
                         // Any token immediately following a number, variable, or closing parenthesis
                         // must be an operator or closing parenthesis
-                        //if (Regex.IsMatch(tokens[i], @"^[a-zA-Z][0-9a-zA-Z]*$|^(?: \d+\.\d* | \d*\.\d+ | \d+ ) (?: e[\+-]?\d+)?$|\)"))
                         if (MatchThese(equation[i], pNumber, pVariable, pClose))
                         {
-                            //if (Regex.IsMatch(tokens[i + 1], @"[\+\-*/\)]"))
                             if (!MatchThese(equation[i + 1], pOperator, pClose))
                             {
                                 throw new FormulaFormatException(
@@ -136,13 +126,11 @@ namespace Formulas
                 throw new FormulaFormatException("Not all parenthesis have been closed.");
             }
             // The first token of a formula must be a number, variable, or opening parenthesis
-            //if (Regex.IsMatch(tokens[0], @"[\+\-*/\)]"))
             if (!MatchThese(equation[0], pNumber, pVariable, pOpen))
             {
                 throw new FormulaFormatException("Formula must begin with a number, variable, or opening parenthesis.");
             }
             // The last token of a formula must be a number, variable, or closing parenthesis
-            //if (Regex.IsMatch(tokens[tokens.Count - 1], @"[\+\-*/\(]"))
             if (!MatchThese(equation[equation.Count - 1], pNumber, pVariable, pClose))
             {
                 throw new FormulaFormatException("Formula must end with a number, variable, or closing parenthesis.");
@@ -174,15 +162,6 @@ namespace Formulas
         /// </summary>
         public double Evaluate(Lookup lookup)
         {
-            //double sum = 0;
-
-            //foreach (string token in infix)
-            //{
-            //    sum += lookup(token);
-            //}
-
-            //return sum;
-
             Stack<double> vStack = new Stack<double>(); // value stack
             Stack<string> oStack = new Stack<string>(); // operator stack
 
@@ -226,7 +205,6 @@ namespace Formulas
                 else if (MatchThese(token, pVariable))
                 {
                     {
-                        //double val = Int32.Parse(token);
                         double val = lookup(token);
 
                         if (val != 0)
