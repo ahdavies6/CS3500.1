@@ -142,7 +142,7 @@ namespace Dependencies
                 }
                 else
                 {
-                    return null;
+                    return System.Linq.Enumerable.Empty<string>();
                 }
             }
             else
@@ -164,7 +164,7 @@ namespace Dependencies
         }
 
         /// <summary>
-        /// Enumerates dependees(t).  Requires t != null.
+        /// Enumerates dependees(s).  Requires s != null.
         /// </summary>
         public IEnumerable<string> GetDependees(string s)
         {
@@ -176,7 +176,7 @@ namespace Dependencies
                 }
                 else
                 {
-                    return null;
+                    return System.Linq.Enumerable.Empty<string>();
                 }
             }
             else
