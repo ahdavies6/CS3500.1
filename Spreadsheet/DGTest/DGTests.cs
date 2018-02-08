@@ -48,10 +48,6 @@ namespace DGTest
             Assert.IsTrue(!graph.HasDependees(dependent));
             Assert.IsTrue(!graph.HasDependees(dependee));
             Assert.IsTrue(!graph.HasDependents(dependee));
-            Assert.IsNull(graph.GetDependents(dependent));
-            Assert.IsNull(graph.GetDependees(dependee));
-            Assert.IsNull(graph.GetDependents(dependee));
-            Assert.IsNull(graph.GetDependees(dependent));
         }
 
         /// <summary>
