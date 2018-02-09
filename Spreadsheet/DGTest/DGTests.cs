@@ -259,19 +259,6 @@ namespace DGTest
         }
 
         /// <summary>
-        /// Ensures ReplaceDependents raises the right exception when one element of
-        /// the IEnumerable argument is null.
-        /// </summary>
-        [TestMethod]
-        [ExpectedException(typeof(NullReferenceException))]
-        public void TestNull7()
-        {
-            DependencyGraph graph = new DependencyGraph();
-            string[] nuller = { "hi", null, "am broken" };
-            graph.ReplaceDependents("hi", nuller);
-        }
-
-        /// <summary>
         /// Ensures ReplaceDependees raises the right exception for a null argument.
         /// </summary>
         [TestMethod]

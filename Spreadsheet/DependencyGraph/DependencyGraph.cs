@@ -1,4 +1,9 @@
 ﻿// Skeleton implementation written by Joe Zachary for CS 3500, January 2018.
+//
+// Full implementation completed by:
+// Adam Davies
+// CS 3500-001
+// Spring Semester 2018
 
 using System;
 using System.Collections.Generic;
@@ -94,7 +99,7 @@ namespace Dependencies
             {
                 if (nodes.ContainsKey(s))
                 {
-                    return nodes[s].MyDependents.Count > 0;
+                    return nodes[s].Dependents.Count > 0;
                 }
                 else
                 {
@@ -116,7 +121,7 @@ namespace Dependencies
             {
                 if (nodes.ContainsKey(s))
                 {
-                    return nodes[s].MyDependees.Count > 0;
+                    return nodes[s].Dependees.Count > 0;
                 }
                 else
                 {
@@ -154,12 +159,21 @@ namespace Dependencies
         /// <summary>
         /// Enumerates dependents(s). Handles yield return so public GetDependents
         /// can (non-yield) return null.
+        /// 
+        /// Requires s != null.
         /// </summary>
         private IEnumerable<string> GetDependentsInternal(string s)
         {
-            foreach (string key in nodes[s].MyDependents.Keys)
+            if (s != null)
             {
-                yield return key;
+                foreach (string key in nodes[s].Dependents.Keys)
+                {
+                    yield return key;
+                }
+            }
+            else
+            {
+                throw new ArgumentNullException();
             }
         }
 
@@ -188,12 +202,17 @@ namespace Dependencies
         /// <summary>
         /// Enumerates dependents(s). Handles yield return so public GetDependees
         /// can (non-yield) return null.
+        /// 
+        /// Requires s != null.
         /// </summary>
         private IEnumerable<string> GetDependeesInternal(string s)
         {
-            foreach (string key in nodes[s].MyDependees.Keys)
+            if (s != null)
             {
-                yield return key;
+                foreach (string key in nodes[s].Dependees.Keys)
+                {
+                    yield return key;
+                }
             }
         }
 
@@ -229,13 +248,13 @@ namespace Dependencies
                     nodes.Add(t, dependent);
                 }
 
-                if (!dependee.MyDependents.ContainsKey(t))
+                if (!dependee.Dependents.ContainsKey(t))
                 {
-                    dependee.MyDependents.Add(t, dependent);
+                    dependee.Dependents.Add(t, dependent);
                 }
-                if (!dependent.MyDependees.ContainsKey(s))
+                if (!dependent.Dependees.ContainsKey(s))
                 {
-                    dependent.MyDependees.Add(s, dependee);
+                    dependent.Dependees.Add(s, dependee);
                 }
             }
             else
@@ -255,8 +274,8 @@ namespace Dependencies
             {
                 if (nodes.ContainsKey(s) && nodes.ContainsKey(t))
                 {
-                    nodes[s].MyDependents.Remove(t);
-                    nodes[t].MyDependees.Remove(s);
+                    nodes[s].Dependents.Remove(t);
+                    nodes[t].Dependees.Remove(s);
 
                     // if that was the last dependency the node was involved in, get
                     // rid of it to free up memory
@@ -283,7 +302,7 @@ namespace Dependencies
         /// </summary>
         public void ReplaceDependents(string s, IEnumerable<string> newDependents)
         {
-            if (s != null)
+            if (s != null && newDependents != null)
             {
                 if (HasDependents(s))
                 {
@@ -305,7 +324,7 @@ namespace Dependencies
                     }
                     else
                     {
-                        throw new NullReferenceException();
+                        throw new ArgumentNullException();
                     }
                 }
             }
@@ -322,7 +341,7 @@ namespace Dependencies
         /// </summary>
         public void ReplaceDependees(string t, IEnumerable<string> newDependees)
         {
-            if (t != null)
+            if (t != null && newDependees != null)
             {
                 if (HasDependees(t))
                 {
@@ -344,7 +363,7 @@ namespace Dependencies
                     }
                     else
                     {
-                        throw new NullReferenceException();
+                        throw new ArgumentNullException();
                     }
                 }
             }
@@ -369,59 +388,43 @@ namespace Dependencies
         {
             get
             {
-                return myDependents.Count + myDependees.Count;
+                return myDependeees.Count + myDependents.Count;
             }
         }
 
         /// <summary>
         /// All dependents of this node.
         /// </summary>
-        public Dictionary<string, DependencyNode> MyDependees
+        public Dictionary<string, DependencyNode> Dependees
+        {
+            get { return myDependeees; }
+        }
+        private Dictionary<string, DependencyNode> myDependeees;
+
+        /// <summary>
+        /// All dependees of this node.
+        /// </summary>
+        public Dictionary<string, DependencyNode> Dependents
         {
             get { return myDependents; }
         }
         private Dictionary<string, DependencyNode> myDependents;
 
         /// <summary>
-        /// All dependees of this node.
-        /// </summary>
-        public Dictionary<string, DependencyNode> MyDependents
-        {
-            get { return myDependees; }
-        }
-        private Dictionary<string, DependencyNode> myDependees;
-
-        /// <summary>
         /// Creates a DependencyNode of name (key) with an empty set of dependents and an empty set of dependees.
+        /// Requires key != null.
         /// </summary>
         public DependencyNode(string key)
         {
-            myKey = key;
-            myDependents = new Dictionary<string, DependencyNode>();
-            myDependees = new Dictionary<string, DependencyNode>();
-        }
-
-        /// <summary>
-        /// If this node has (key) in myDependents, the node with key (key)
-        /// is removed from myDependents; else, does nothing.
-        /// </summary>
-        public void RemoveDependent(string key)
-        {
-            if (myDependents.ContainsKey(key))
+            if (key != null)
             {
-                myDependents.Remove(key);
+                myKey = key;
+                myDependeees = new Dictionary<string, DependencyNode>();
+                myDependents = new Dictionary<string, DependencyNode>();
             }
-        }
-
-        /// <summary>
-        /// If this node has (key) in myDependes, the node with key (key)
-        /// is removed from myDependees; else, does nothing.
-        /// </summary>
-        public void RemoveDependee(string key)
-        {
-            if (myDependees.ContainsKey(key))
+            else
             {
-                myDependees.Remove(key);
+                throw new ArgumentNullException();
             }
         }
     }
