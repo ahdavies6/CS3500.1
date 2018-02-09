@@ -501,6 +501,31 @@ namespace FormulaTest
             f.Evaluate(null);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void NullTest5()
+        {
+            Formula f = new Formula(null);
+        }
+
+        // Tests ensure exceptions at division by zero
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaEvaluationException))]
+        public void DivByZeroTest1()
+        {
+            Formula f = new Formula("14/x");
+            f.Evaluate(s => 0);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaEvaluationException))]
+        public void DivByZeroTest2()
+        {
+            Formula f = new Formula("(x + (5 * (x + 1))) / (x - 2)", (s => s + s), (s => true));
+            f.Evaluate(s => s.Length);
+        }
+
         // Test ensures all methods treat Formula() the same as Formula("0")
         [TestMethod]
         public void ZeroArgumentTest()

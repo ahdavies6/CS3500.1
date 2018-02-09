@@ -65,10 +65,7 @@ namespace Formulas
         /// </summary>
         public Formula(string formula) : this(formula, (s => s), (s => true))
         {
-            if (formula == null)
-            {
-                throw new ArgumentNullException("Formula constructor arguments must not be null.");
-            }
+            // Simply redirects to the other Formula constructor
         }
 
         /// <summary>
@@ -273,10 +270,11 @@ namespace Formulas
                 }
                 else if (MatchThese(token, pNumber))
                 {
-                    if (!Double.TryParse(token, out double val))
-                    {
-                        throw new FormulaEvaluationException("Invalid token: " + token);
-                    }
+                    //if (!Double.TryParse(token, out double val))
+                    //{
+                    //    throw new FormulaEvaluationException("Invalid token: " + token);
+                    //}
+                    double val = double.Parse(token);
 
                     if (oStack.Count > 0)
                     {
