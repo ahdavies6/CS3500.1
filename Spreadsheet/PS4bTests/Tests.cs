@@ -148,7 +148,6 @@ namespace PS4bTests
         [TestMethod]
         public void COEmptyTest()
         {
-            // todo remove extra code
             DependencyGraph dg1 = new DependencyGraph();
             DependencyGraph dg2 = new DependencyGraph(dg1);
             Assert.AreEqual(0, dg1.Size);
