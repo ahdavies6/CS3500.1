@@ -13,9 +13,9 @@ namespace Formulas
 {
     /// <summary>
     /// Represents formulas written in standard infix notation using standard precedence
-    /// rules.  Provides a means to evaluate Formulas.  Formulas can be composed of
+    /// rules. Provides a means to evaluate Formulas. Formulas can be composed of
     /// non-negative floating-point numbers, variables, left and right parentheses, and
-    /// the four binary operator symbols +, -, *, and /.  (The unary operators + and -
+    /// the four binary operator symbols +, -, *, and /. (The unary operators + and -
     /// are not allowed.)
     /// </summary>
     public struct Formula
@@ -60,21 +60,37 @@ namespace Formulas
         /// parentheses, and the four binary operator symbols +, -, *, and /.  White space is
         /// permitted between tokens, but is not required.
         /// 
-        /// Examples of a valid parameter to this constructor are:
-        ///     "2.5e9 + x5 / 17"
-        ///     "(5 * 2) + 8"
-        ///     "x*y-2+35/9"
-        ///     
-        /// Examples of invalid parameters are:
-        ///     "_"
-        ///     "-5.3"
-        ///     "2 5 + 3"
+        /// If the formula is syntacticaly invalid, throws a FormulaFormatException with an 
+        /// explanatory Message.
+        /// </summary>
+        public Formula(string formula) : this(formula, (s => s), (s => true))
+        {
+            if (formula == null)
+            {
+                throw new ArgumentNullException("Formula constructor arguments must not be null.");
+            }
+        }
+
+        /// <summary>
+        /// Creates a Formula from a string that consists of a standard infix expression composed
+        /// from non-negative floating-point numbers (using C#-like syntax for double/int literals), 
+        /// variable symbols (a letter followed by zero or more letters and/or digits), left and right
+        /// parentheses, and the four binary operator symbols +, -, *, and /.  White space is
+        /// permitted between tokens, but is not required.
+        /// 
+        /// Uses Normalizer to canonize variables, and Validator to impose additional restrictions on
+        /// the validity of a variable.
         /// 
         /// If the formula is syntacticaly invalid, throws a FormulaFormatException with an 
         /// explanatory Message.
         /// </summary>
-        public Formula(String formula)
+        public Formula(string formula, Normalizer normalizer, Validator validator)
         {
+            if (formula == null || normalizer == null || validator == null)
+            {
+                throw new ArgumentNullException("Formula constructor arguments must not be null.");
+            }
+
             int openParentheses = 0;
             int closeParentheses = 0;
 
@@ -82,7 +98,20 @@ namespace Formulas
 
             foreach (string token in GetTokens(formula))
             {
-                equation.Add(token);
+                if (MatchThese(token, pVariable))
+                {
+                    string varToken = normalizer(token);
+                    equation.Add(varToken);
+                    
+                    if (!validator(varToken))
+                    {
+                        throw new FormulaFormatException("Formula did not meet validator requirements.");
+                    }
+                }
+                else
+                {
+                    equation.Add(token);
+                }
             }
 
             for (int i = 0; i < equation.Count; i++)
@@ -90,6 +119,7 @@ namespace Formulas
                 // All tokens must be syntactically valid
                 if (Regex.IsMatch(equation[i], pFull, RegexOptions.IgnorePatternWhitespace))
                 {
+
                     if (MatchThese(equation[i], pOpen))
                     {
                         openParentheses++;
@@ -167,35 +197,6 @@ namespace Formulas
         }
 
         /// <summary>
-        /// Creates a Formula from a string that consists of a standard infix expression composed
-        /// from non-negative floating-point numbers (using C#-like syntax for double/int literals), 
-        /// variable symbols (a letter followed by zero or more letters and/or digits), left and right
-        /// parentheses, and the four binary operator symbols +, -, *, and /.  White space is
-        /// permitted between tokens, but is not required.
-        /// 
-        /// Uses Normalizer to canonize variables, and Validator to impose additional restrictions on
-        /// the validity of a variable.
-        /// 
-        /// If the formula is syntacticaly invalid, throws a FormulaFormatException with an 
-        /// explanatory Message.
-        /// </summary>
-        public Formula(string formula, Normalizer normalizer, Validator validator) : this(formula)
-        {
-            for (int i = 0; i < equation.Count; i++)
-            {
-                if (MatchThese(equation[i], pVariable))
-                {
-                    equation[i] = normalizer(equation[i]);
-
-                    if (!validator(equation[i]))
-                    {
-                        throw new FormulaFormatException("Formula did not meet validator requirements.");
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Evaluates this Formula, using the Lookup delegate to determine the values of variables.  The
         /// delegate takes a variable name as a parameter and returns its value (if it has one) or throws
         /// an UndefinedVariableException (otherwise).  Uses the standard precedence rules when doing the evaluation.
@@ -206,7 +207,12 @@ namespace Formulas
         /// </summary>
         public double Evaluate(Lookup lookup)
         {
-            // In the case of a null constructor.
+            if (lookup == null)
+            {
+                throw new ArgumentNullException("Formula.Evaluate arguments must not be null.");
+            }
+
+            // In the case of a null constructor:
             if (equation == null)
             {
                 return 0;
@@ -403,6 +409,39 @@ namespace Formulas
                     oStack.Pop();
                     return subFrom - subThis;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Returns a set of all the variables in equation.
+        /// </summary>
+        public ISet<string> GetVariables()
+        {
+            ISet<string> result = new HashSet<string>();
+
+            if (equation != null)
+            {
+                foreach (string token in equation)
+                {
+                    if (MatchThese(token, pVariable) && !result.Contains(token))
+                    {
+                        result.Add(token);
+                    }
+                }
+            }
+            
+            return result;
+        }
+
+        public override string ToString()
+        {
+            if (equation == null)
+            {
+                return "0";
+            }
+            else
+            {
+                return string.Join("", equation);
             }
         }
 

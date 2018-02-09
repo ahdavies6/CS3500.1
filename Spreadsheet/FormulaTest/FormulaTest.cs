@@ -1,11 +1,13 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Formulas;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace FormulaTest
 {
     [TestClass]
-    public class GradingTests
+    public class FormulaTests
     {
         // Tests of syntax errors detected by the constructor
         [TestMethod()]
@@ -379,7 +381,8 @@ namespace FormulaTest
             Assert.AreNotEqual(1, f.Evaluate(s => 4e-4));
         }
 
-        // Tests for the overloaded constructor (with params formula, normalizer, and validator).
+        // Tests for the overloaded constructor (with params formula, normalizer, and validator)
+
         [TestMethod]
         public void OverloadTest1()
         {
@@ -408,9 +411,171 @@ namespace FormulaTest
         [ExpectedException(typeof(FormulaFormatException))]
         public void OverloadTest4()
         {
+            Formula f = new Formula("apple", (s => s), HasUpper);
+        }
+
+        [TestMethod]
+        public void OverloadTest5()
+        {
+            Formula f = new Formula("banana", (s => s.ToUpper()), HasUpper);
+            Assert.AreEqual(3, f.Evaluate(NumAs));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void OverloadTest6()
+        {
             Formula f = new Formula("xa * xa - 1", (s => s + s), (s => s.Length < 3));
         }
 
+        // Tests for Formula.GetVariables()
+
+        [TestMethod]
+        public void GVTest1()
+        {
+            Formula f = new Formula();
+            ISet<string> vars = f.GetVariables();
+            Assert.AreEqual(0, vars.Count);
+        }
+
+        [TestMethod]
+        public void GVTest2()
+        {
+            Formula f = new Formula("random + (x2 - whocares) * a8098 / random", (s => s + "eh"), (s => true));
+            string[] expected = { "randomeh", "x2eh", "whocareseh", "a8098eh" };
+            ISet<string> vars = f.GetVariables();
+            Assert.AreEqual(4, vars.Count);
+            
+            for (int i = 0; i < vars.Count; i++)
+            {
+                Assert.IsTrue(vars.Contains(expected[i]));
+            }
+        }
+
+        // Tests for Formula.ToString()
+
+        [TestMethod]
+        public void TSTest1()
+        {
+            Formula f = new Formula();
+            Assert.AreEqual("0", f.ToString());
+        }
+
+        [TestMethod]
+        public void TSTest2()
+        {
+            Formula f1 = new Formula("((adam - banana * onea) + none) / (14 * (none + 1))");
+            Formula f2 = new Formula(f1.ToString(), s => s, s => true);
+
+            AssertEquality(f1, f2);
+        }
+
+        // Tests to ensure null arguments throw ArgumentNullException
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void NullTest1()
+        {
+            Formula f = new Formula(null, (s => s), (s => true));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void NullTest2()
+        {
+            Formula f = new Formula("otherwise - fine", null, (s => true));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void NullTest3()
+        {
+            Formula f = new Formula("should + be * okay", (s => s), null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void NullTest4()
+        {
+            Formula f = new Formula("4");
+            f.Evaluate(null);
+        }
+
+        // Test ensures all methods treat Formula() the same as Formula("0")
+        [TestMethod]
+        public void ZeroArgumentTest()
+        {
+            Formula f1 = new Formula();
+            Formula f2 = new Formula();
+
+            AssertEquality(f1, f2);
+        }
+
+        // Stress tests
+
+        [TestMethod]
+        public void StressTest()
+        {
+            Formula f1 = new Formula("(((((2+3*a)/(7e-5+b-c))*d+.0005e+92)-8.2)*3.14159) * ((e+3.1)-.00000000008)",
+                (s => s + "UPPER"), HasUpper);
+            Formula f2 = new Formula(f1.ToString(), (s => s), (s => s.Any(c => char.IsUpper(c))));
+
+            AssertEquality(f1, f2);
+        }
+
+        [TestMethod]
+        public void RepeatStress1()
+        {
+            StressTest();
+        }
+
+        [TestMethod]
+        public void RepeatStress2()
+        {
+            StressTest();
+        }
+
+        [TestMethod]
+        public void RepeatStress3()
+        {
+            StressTest();
+        }
+
         #endregion
+
+        // Returns whether s has at least one capitalized char.
+        public bool HasUpper(string s)
+        {
+            return s.Any(c => char.IsUpper(c));
+        }
+
+        // Return number of 'a's in s
+        public double NumAs(string s)
+        {
+            int n = 0;
+            foreach (char c in s)
+            {
+                if (Char.ToLower(c) == 'a')
+                {
+                    n++;
+                }
+            }
+            return n;
+        }
+
+        // Make sure both formulas return identical results for all public methods
+        public bool AssertEquality(Formula f1, Formula f2)
+        {
+            Assert.AreEqual(f1.Evaluate(s => 4), f2.Evaluate(s => 4));
+            Assert.AreEqual(f1.Evaluate(NumAs), f2.Evaluate(NumAs));
+
+            var f1v = f1.GetVariables().ToList();
+            var f2v = f2.GetVariables().ToList();
+            CollectionAssert.AreEqual(f1v, f2v);
+
+            Assert.AreEqual(f1.ToString(), f2.ToString());
+
+            return true;
+        }
     }
 }
