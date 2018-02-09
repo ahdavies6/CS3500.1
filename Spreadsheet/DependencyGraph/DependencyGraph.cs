@@ -78,6 +78,20 @@ namespace Dependencies
         }
 
         /// <summary>
+        /// Enumerates the keys of all DependencyNodes in the DependencyGraph.
+        /// </summary>
+        internal IEnumerable<string> GetNodes
+        {
+            get
+            {
+                foreach (string s in nodes.Keys)
+                {
+                    yield return s;
+                }
+            }
+        }
+
+        /// <summary>
         /// All the nodes (vertices) in the DependencyGraph.
         /// </summary>
         private Dictionary<string, DependencyNode> nodes;
@@ -88,6 +102,28 @@ namespace Dependencies
         public DependencyGraph()
         {
             nodes = new Dictionary<string, DependencyNode>();
+        }
+
+        /// <summary>
+        /// Creates a DependencyGraph that is an exact copy of graph.
+        /// Requires graph != null.
+        /// </summary>
+        public DependencyGraph(DependencyGraph graph) : this()
+        {
+            if (graph != null)
+            {
+                foreach (string s in graph.GetNodes)
+                {
+                    foreach (string t in graph.GetDependents(s))
+                    {
+                        AddDependency(s, t);
+                    }
+                }
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
 
         /// <summary>
