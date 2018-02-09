@@ -7,6 +7,7 @@ using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Dependencies;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PS4bTests
 {
@@ -150,11 +151,8 @@ namespace PS4bTests
             // todo remove extra code
             DependencyGraph dg1 = new DependencyGraph();
             DependencyGraph dg2 = new DependencyGraph(dg1);
+            Assert.AreEqual(0, dg1.Size);
             Assert.AreEqual(dg1.Size, dg2.Size);
-
-            // dg1 should be unchanged
-
-            // dg1 and dg2 should contain exactly the same set of dependencies
 
             // dg1 and dg2 should be independent of each other (modifying one should not modify the other)
             string dee = "a";
@@ -166,15 +164,23 @@ namespace PS4bTests
             Assert.AreEqual(0, dg2.Size);
 
             dg2.AddDependency(dee, dent2);
-            List<string> dg1dee = (List<string>)dg1.GetDependees(dent1);
-            List<string> dg1dent = (List<string>)dg1.GetDependents(dee);
-            List<string> dg2dee = (List<string>)dg1.GetDependees(dent2);
-            List<string> dg2dent = (List<string>)dg2.GetDependents(dee);
+            string dg1dee = IE0ToString(dg1.GetDependees(dent1));
+            string dg1dent = IE0ToString(dg1.GetDependents(dee));
+            string dg2dee = IE0ToString(dg2.GetDependees(dent2));
+            string dg2dent = IE0ToString(dg2.GetDependents(dee));
             Assert.AreEqual(1, dg1.Size);
             Assert.AreEqual(1, dg2.Size);
-
+            Assert.AreEqual("a", dg1dee);
+            Assert.AreEqual("b", dg1dent);
+            Assert.AreEqual("a", dg2dee);
+            Assert.AreEqual("c", dg2dent);
             Assert.AreEqual(dg1dee, dg2dee);
             Assert.AreNotEqual(dg1dent, dg2dent);
+        }
+
+        private string IE0ToString(IEnumerable<string> ie)
+        {
+            return ie.First();
         }
 
         // A few stress tests:
@@ -183,52 +189,71 @@ namespace PS4bTests
         public void COStressTest1()
         {
             DependencyGraph dg1 = new DependencyGraph();
-            List<string> dg1all = new List<string>();
-            // add stuff in here
-            List<string> dg1dee1 = new List<string>();
-            foreach (string s in dg1all)
+            List<string> allDents = new List<string>();
+            for (int i = 0; i < 10000; i++)
             {
-                dg1dee1.Add(s);
+                allDents.Add(((i + 1) * 3).ToString());
+                allDents.Add(((i + 1) * 4).ToString());
+                dg1.AddDependency((i).ToString(), ((i + 1) * 3).ToString());
+                dg1.AddDependency((i).ToString(), ((i + 1) * 4).ToString());
             }
-            List<string> dg1dent1 = new List<string>();
-            foreach (string s in dg1all)
-            {
-                dg1dent1.Add(s);
-            }
-
+            Assert.AreEqual(20000, dg1.Size);
             DependencyGraph dg2 = new DependencyGraph(dg1);
-            Assert.AreEqual(dg1.Size, dg2.Size);
 
             // dg1 should be unchanged
-            List<string> dg1dee2 = new List<string>();
-            foreach (string s in dg1all)
+            Assert.AreEqual(20000, dg1.Size);
+            List<string> dg1DentCheck = new List<string>();
+            for (int i = 0; i < 10000; i++)
             {
-                dg1dee2.Add(s);
+                foreach (string s in dg1.GetDependents((i).ToString()))
+                {
+                    dg1DentCheck.Add(s);
+                }
             }
-            List<string> dg1dent2 = new List<string>();
-            foreach (string s in dg1all)
-            {
-                dg1dent2.Add(s);
-            }
-            CollectionAssert.AreEquivalent(dg1dee1, dg1dee2);
-            CollectionAssert.AreEquivalent(dg1dent1, dg1dent2);
+            CollectionAssert.AreEquivalent(allDents, dg1DentCheck);
 
             // dg1 and dg2 should contain exactly the same set of dependencies
-            List<string> dg2dee = new List<string>();
-            foreach (string s in dg1all)
+            Assert.AreEqual(dg1.Size, dg2.Size);
+            List<string> dg1Dents = new List<string>();
+            List<string> dg2Dents = new List<string>();
+            for (int i = 0; i < 10000; i++)
             {
-                dg2dee.Add(s);
+                int j = 0;
+                foreach (string s in dg1.GetDependents((i).ToString()))
+                {
+                    dg1Dents.Add(s);
+                    j++;
+                }
+
+                j = 0;
+                foreach (string s in dg2.GetDependents((i).ToString()))
+                {
+                    dg2Dents.Add(s);
+                    j++;
+                }
             }
-            List<string> dg2dent = new List<string>();
-            foreach (string s in dg1all)
-            {
-                dg2dent.Add(s);
-            }
-            CollectionAssert.AreEquivalent(dg1dee2, dg2dee);
-            CollectionAssert.AreEquivalent(dg1dent2, dg2dent);
+            CollectionAssert.AreEquivalent(dg1Dents, dg2Dents);
 
             // dg1 and dg2 should be independent of each other (modifying one should not modify the other)
-            // modify stuff in here
+            for (int i = 0; i < 10000; i++)
+            {
+                dg1.RemoveDependency(i.ToString(), ((i + 1) * 3).ToString());
+                dg1Dents.Remove(((i + 1) * 3).ToString());
+            }
+            Assert.AreEqual(10000, dg1.Size);
+            Assert.AreEqual(20000, dg2.Size);
+            Assert.AreEqual(10000, dg1Dents.Count);
+            Assert.AreEqual(20000, dg2Dents.Count);
+
+            for (int i = 0; i < 10000; i++)
+            {
+                dg2.RemoveDependency(i.ToString(), ((i + 1) * 4).ToString());
+                dg2Dents.Remove(((i + 1) * 4).ToString());
+            }
+            Assert.AreEqual(10000, dg1.Size);
+            Assert.AreEqual(10000, dg2.Size);
+            Assert.AreEqual(10000, dg1Dents.Count);
+            Assert.AreEqual(10000, dg2Dents.Count);
         }
 
         [TestMethod]
