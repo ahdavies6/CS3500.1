@@ -431,6 +431,9 @@ namespace Formulas
             return result;
         }
 
+        /// <summary>
+        /// Returns normalized equation.
+        /// </summary>
         public override string ToString()
         {
             if (equation == null)
