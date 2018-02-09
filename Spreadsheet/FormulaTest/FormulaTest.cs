@@ -1,4 +1,11 @@
-﻿using System;
+﻿// Tests 1-45 written by instructor Joseph Zachary and teaching assistants
+//
+// All other tests written by:
+// Adam Davies
+// CS 3500-001
+// Spring Semester, 2018
+
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Formulas;
 using System.Linq;
