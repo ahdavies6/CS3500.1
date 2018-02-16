@@ -101,16 +101,20 @@ namespace SpreadsheetTests
         public void SCCD()
         {
             Spreadsheet ss = new Spreadsheet();
-            ss.SetCellContents("b60", 2);
+            HashSet<string> test = (HashSet<string>)ss.SetCellContents("b60", 2);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60" }));
             Assert.AreEqual((double)2, ss.GetCellContents("b60"));
 
-            ss.SetCellContents("b60", 199);
+            test = (HashSet<string>)ss.SetCellContents("b60", 199);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60" }));
             Assert.AreEqual((double)199, ss.GetCellContents("b60"));
 
-            ss.SetCellContents("b60", "now I'm a string!");
+            test = (HashSet<string>)ss.SetCellContents("b60", "now I'm a string!");
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60" }));
             Assert.AreEqual("now I'm a string!", ss.GetCellContents("b60"));
 
-            CollectionAssert.AreEqual(new HashSet<string>(), (HashSet<string>)ss.SetCellContents("b60", 2));
+            test = (HashSet<string>)ss.SetCellContents("b60", 2);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60" }));
             Assert.AreEqual((double)2, ss.GetCellContents("b60"));
         }
 
@@ -118,19 +122,21 @@ namespace SpreadsheetTests
         public void SCCS()
         {
             Spreadsheet ss = new Spreadsheet();
-            ss.SetCellContents("AdD1423", "IsString");
+            HashSet<string> test = (HashSet<string>)ss.SetCellContents("AdD1423", "IsString");
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423" }));
             Assert.AreEqual("IsString", ss.GetCellContents("AdD1423"));
 
-            ss.SetCellContents("AdD1423", "different one!");
+            test = (HashSet<string>)ss.SetCellContents("AdD1423", "different one!");
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423" }));
             Assert.AreEqual("different one!", ss.GetCellContents("AdD1423"));
 
-            ss.SetCellContents("AdD1423", 42);
+            test = (HashSet<string>)ss.SetCellContents("AdD1423", 42);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423" }));
             Assert.AreEqual((double)42, ss.GetCellContents("AdD1423"));
 
-            ss.SetCellContents("AdD1423", "finally:");
+            test = (HashSet<string>)ss.SetCellContents("AdD1423", "finally:");
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423" }));
             Assert.AreEqual("finally:", ss.GetCellContents("AdD1423"));
-
-            // todo: test return ISet
         }
 
         [TestMethod]
@@ -147,6 +153,7 @@ namespace SpreadsheetTests
 
             // todo: test return ISet (MAKE SURE 3+ LAYERS DEEP WORKS)
             // also make sure disconnected one's arent included
+            // also make sure dependents != dependees...
         }
 
         [TestMethod]

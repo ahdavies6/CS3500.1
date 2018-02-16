@@ -132,8 +132,7 @@ namespace SS
             {
                 cells.SetCellContent(name, number);
 
-                // todo: return correct thing here
-                return new HashSet<string> { };
+                return GetAllDependents(name);
             }
             else
             {
@@ -161,8 +160,7 @@ namespace SS
                 {
                     cells.SetCellContent(name, text);
 
-                    // todo: return correct thing here
-                    return new HashSet<string> { };
+                    return GetAllDependents(name);
                 }
                 else
                 {
@@ -232,20 +230,34 @@ namespace SS
         /// </summary>
         protected override IEnumerable<string> GetDirectDependents(string name)
         {
-            return new HashSet<string> { };
+            return new HashSet<string>();
         }
 
-        private IEnumerable<string> GetIndirectDependents(string name)
+        /// <summary>
+        /// Returns an ISet containing all dependents of cell named (name), including cell named (name).
+        /// </summary>
+        private ISet<string> GetAllDependents(string name)
         {
-            return (HashSet<string>)GetIndirectDependents(GetDirectDependents(name));
-        }
-
-        private IEnumerable<string> GetIndirectDependents(IEnumerable<string> names)
-        {
-            HashSet<string> result = new HashSet<string>();
-            foreach (string s in names)
+            HashSet<string> allDependents = new HashSet<string> { name };
+            foreach (string s in GetAllDependents(new HashSet<string> { name }))
             {
-                foreach (string t in GetIndirectDependents(GetDirectDependents(s)))
+                allDependents.Add(s);
+            }
+            return (HashSet<string>)GetAllDependents(allDependents);
+        }
+
+        /// <summary>
+        /// Recursive overload helper method for GetAllDependents(string name).
+        /// 
+        /// Returns an ISet containing all direct and indirect dependents of all cells whose
+        /// names are in (names).
+        /// </summary>
+        private ISet<string> GetAllDependents(ISet<string> names)
+        {
+            HashSet<string> result = (HashSet<string>)names;
+            foreach (string s in result)
+            {
+                foreach (string t in GetAllDependents((HashSet<string>)GetDirectDependents(s)))
                 {
                     result.Add(t);
                 }
