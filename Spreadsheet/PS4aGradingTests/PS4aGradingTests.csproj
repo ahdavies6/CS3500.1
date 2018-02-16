@@ -54,7 +54,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Source\Repos\spreadsheet\Spreadsheet\Formula\Formula.csproj">
+    <ProjectReference Include="..\Formula\Formula.csproj">
       <Project>{d43d998c-9797-4cf4-9bb0-6de22753849a}</Project>
       <Name>Formula</Name>
     </ProjectReference>
