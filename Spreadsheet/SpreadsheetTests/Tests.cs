@@ -11,6 +11,33 @@ namespace SpreadsheetTests
     public class Tests
     {
         #region GetNamesOfAllNonemptyCells Tests
+
+        [TestMethod]
+        public void NonemptyCells()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            HashSet<string> test = IEToHash(ss.GetNamesOfAllNonemptyCells());
+            Assert.AreEqual(0, test.Count);
+
+            ss.SetCellContents("A1", 0);
+            test = IEToHash(ss.GetNamesOfAllNonemptyCells());
+            Assert.AreEqual(1, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "A1" }));
+
+            ss.SetCellContents("A1", "something different");
+            test = IEToHash(ss.GetNamesOfAllNonemptyCells());
+            Assert.AreEqual(1, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "A1" }));
+
+            ss.SetCellContents("bJFIOEdfsa123489701", new Formula("A1 + 1"));
+            test = IEToHash(ss.GetNamesOfAllNonemptyCells());
+            Assert.AreEqual(2, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "A1", "bJFIOEdfsa123489701" }));
+        }
+
+        
+
+
         #endregion
 
         #region GetCellContents Tests
@@ -27,8 +54,6 @@ namespace SpreadsheetTests
             Assert.AreEqual((double)19, ss.GetCellContents("pNzlefEEKN942"));
             Assert.AreEqual("who knows what this will be?", ss.GetCellContents("zYLd419"));
             Assert.AreEqual(f, ss.GetCellContents("inFEWNnnk107"));
-
-            // Tests for Formula cells included in SCCFIndirect()
         }
 
         [TestMethod]
@@ -154,7 +179,7 @@ namespace SpreadsheetTests
 
         #endregion
 
-        #region SetCellContents (formula) Tests
+        #region SetCellContents (formula) and GetDirectDependents Tests
 
         /// <summary>
         /// This helper method will set up a Spreadsheet with formula dependencies for other
@@ -205,7 +230,6 @@ namespace SpreadsheetTests
         [TestMethod]
         public void SCCFDirect()
         {
-            // Make sure all the assertions in SCCFStart are passing.
             SCCFStart();
         }
 
@@ -216,6 +240,7 @@ namespace SpreadsheetTests
             Formula f = (Formula)ss.GetCellContents("Lib89");
             Assert.AreEqual(new Formula("a20 - b16 + (876 * b16) / 7").ToString(), f.ToString());
             HashSet<string> test = (HashSet<string>)ss.SetCellContents("a20", "let's begin");
+            Assert.AreEqual(3, test.Count);
             Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20", "Lib89", "b16" }));
 
             f = new Formula("AD19 * 2");
@@ -290,17 +315,11 @@ namespace SpreadsheetTests
             test = (HashSet<string>)ss.SetCellContents("ROOT1", 0);
             Assert.AreEqual(502, test.Count);
 
+            test = (HashSet<string>)ss.SetCellContents("B1", 0);
+            Assert.AreEqual(4, test.Count);
+
             test = (HashSet<string>)ss.SetCellContents("STUB1", "why bother");
             Assert.AreEqual(1, test.Count);
-
-            test = (HashSet<string>)ss.SetCellContents("ROOT1", 0);
-            Assert.AreEqual(498, test.Count);
-
-            test = (HashSet<string>)ss.SetCellContents("B3", 0);
-            Assert.AreEqual(3, test.Count);
-
-            test = (HashSet<string>)ss.SetCellContents("ROOT1", 0);
-            Assert.AreEqual(501, test.Count);
         }
 
         [TestMethod]
@@ -316,22 +335,40 @@ namespace SpreadsheetTests
         [ExpectedException(typeof(CircularException))]
         public void SCCFCircular()
         {
-            // todo: test circular dependencies
+            Spreadsheet ss = new Spreadsheet();
+            Formula f = new Formula("B1 * 2");
+            ss.SetCellContents("A1", f);
+            f = new Formula("A1 + 1");
+            ss.SetCellContents("A1", f);
         }
 
         #endregion
 
-        #region GetDirectDependents Tests
+        /// <summary>
+        /// Helper method that converts an IEnumerable string object to a HashSet string object.
+        /// </summary>
+        public HashSet<string> IEToHash(IEnumerable<string> ie)
+        {
+            HashSet<string> result = new HashSet<string>();
+            foreach (string s in ie)
+            {
+                result.Add(s);
+            }
+            return result;
+        }
 
-        // todo: remove following comment
-        // What can I even test here? Nothing black-box, presumably...
-
-        #endregion
-
-        #region GetCellsToRecalculate Tests
-        #endregion
-
-        // todo: make sure the next line works in another namespace
-        //AbstractSpreadsheet sheet = new Spreadsheet();
+        /// <summary>
+        /// Built to test the following specification:
+        /// 
+        /// When you are done, another developer using your library should be able to create an
+        /// AbstractSpreadsheet object with the following code:
+        /// 
+        /// <code>AbstractSpreadsheet sheet = new Spreadsheet();</code>
+        /// </summary>
+        [TestMethod]
+        public void MiscellaneousRequirement()
+        {
+            AbstractSpreadsheet sheet = new Spreadsheet();
+        }
     }
 }

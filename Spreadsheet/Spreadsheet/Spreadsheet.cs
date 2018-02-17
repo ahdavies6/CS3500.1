@@ -52,17 +52,6 @@ namespace SS
     /// </summary>
     public class Spreadsheet : AbstractSpreadsheet
     {
-        // todo: make sure everything has Summary tags
-        // todo: implement all abstract methods
-        // todo: look through all requirements in each spec to make sure it does everything it's supposed
-        // to and covers all corner cases
-        // todo: look through all doc comments and make sure they're what they need to be
-        // todo: figure out what else (beyond "GDD") needs to be done regarding GCTR/Visit)
-        // todo: remove all comments (including todos)
-
-        // todo: delete this one for sure
-        private int numRecursion = 0;
-
         /// <summary>
         /// All cells in the spreadsheet.
         /// </summary>
@@ -87,8 +76,10 @@ namespace SS
         /// </summary>
         public override IEnumerable<string> GetNamesOfAllNonemptyCells()
         {
-            // todo: finish this method
-            return new HashSet<string> { };
+            foreach (string s in cells.GetNamesOfAllNonemptyCells())
+            {
+                yield return s;
+            }
         }
 
         /// <summary>
@@ -103,7 +94,7 @@ namespace SS
         private const string validCellNamePattern = "^[a-zA-Z]+[1-9][0-9]*$";
 
         /// <summary>
-        /// Returns whether (name) is a valid cell name.
+        /// Helper method that returns whether (name) is a valid cell name.
         /// </summary>
         private bool IsValidCellName(string name)
         {
@@ -186,29 +177,15 @@ namespace SS
         /// Otherwise, if changing the contents of the named cell to be the formula would cause a 
         /// circular dependency, throws a CircularException.
         /// 
-        /// Spreadsheets are never allowed to contain a combination of Formulas that establish
-        /// a circular dependency.  A circular dependency exists when a cell depends on itself.
-        /// For example, suppose that A1 contains B1*2, B1 contains C1*2, and C1 contains A1*2.
-        /// A1 depends on B1, which depends on C1, which depends on A1.  That's a circular
-        /// dependency.
-        /// 
         /// Otherwise, the contents of the named cell becomes formula.  The method returns a
         /// Set consisting of name plus the names of all other cells whose value depends,
         /// directly or indirectly, on the named cell.
         /// 
         /// For example, if name is A1, B1 contains A1*2, and C1 contains B1+A1, the
         /// set {A1, B1, C1} is returned.
-        /// 
-        /// If a cell's contents is a Formula, its value is either a double or a FormulaError.
-        /// The value of a Formula, of course, can depend on the values of variables.  The value 
-        /// of a Formula variable is the value of the spreadsheet cell it names (if that cell's 
-        /// value is a double) or is undefined (otherwise).  If a Formula depends on an undefined
-        /// variable or on a division by zero, its value is a FormulaError.  Otherwise, its value
-        /// is a double, as specified in Formula.Evaluate.
         /// </summary>
         public override ISet<string> SetCellContents(string name, Formula formula)
         {
-            // todo: there's some other stuff in the specs we need to confirm
             HashSet<string> vars = (HashSet<string>)formula.GetVariables();
             foreach (string variable in vars)
             {
@@ -217,11 +194,11 @@ namespace SS
                     throw new InvalidNameException();
                 }
             }
-            dependencies.ReplaceDependees(name, vars);
-            // todo: CircularException detection
+
             if (IsValidCellName(name))
             {
                 cells.SetCellContents(name, formula);
+                dependencies.ReplaceDependees(name, vars);
 
                 return GetAllDependents(name);
             }
@@ -254,55 +231,34 @@ namespace SS
         }
 
         /// <summary>
-        /// Returns an ISet containing all dependents of cell (name), including cell (name).
-        /// </summary>
-        private ISet<string> GetAllDependents(string name)
-        {
-            return WrapperBoi(name);
-        }
-
-        /// <summary>
-        /// Recursive overload helper method for GetAllDependents().
+        /// Helper method finds the names of all direct dependents of string (start), then adds
+        /// them to a HashSet, which is returned.
         /// 
-        /// Returns an IEnumerable containing all direct *and indirect* dependents of all cells whose
-        /// names are in (names).
+        /// Useful to avoid lots of casting to (HashSet) from IEnumerable or ISet.
         /// </summary>
-        private IEnumerable<string> RecursiveGetAllDependents(string dependent)
+        private HashSet<string> GetHashSetOfDirectDependents(string start)
         {
-            foreach (string indirect in GetDirectDependents(dependent))
+            HashSet<string> hashSet = new HashSet<string>();
+            foreach (string dependent in GetDirectDependents(start))
             {
-                foreach (string next in RecursiveGetAllDependents(indirect))
-                {
-                    yield return next;
-                }
+                hashSet.Add(dependent);
             }
+            return hashSet;
         }
 
-        // todo: doc comment, make nice, etc
-        private HashSet<string> WrapperBoi(string start)
-        {
-            HashSet<string> candyBar = GetHashSetOfDirectDependents(start);
-            candyBar.Add(start);
-            return CandyBoi(candyBar);
-        }
-
-        // todo: delete this
         /// <summary>
-        /// Helper method for OrSatanIAmNotPicky.
-        /// 
-        /// Gets all the indirect dependents from a HashSet (directDependents) of direct dependents
-        /// of a cell.
+        /// Recursive helper method for GetAllDependents.
+        /// Retrieves all indirect dependents from a set of direct dependents (directDependents).
         /// </summary>
-        private HashSet<string> CandyBoi(HashSet<string> directDependents)
+        private HashSet<string> GetIndirectDependents(HashSet<string> directDependents)
         {
-            numRecursion++;
             HashSet<string> allIndirectDependents = new HashSet<string>();
             foreach (string directDependent in directDependents)
             {
                 HashSet<string> nextLayerIndirectDependents = GetHashSetOfDirectDependents(directDependent);
                 foreach (string indirectDependent in nextLayerIndirectDependents)
                 {
-                    HashSet<string> deeper = CandyBoi(nextLayerIndirectDependents);
+                    HashSet<string> deeper = GetIndirectDependents(nextLayerIndirectDependents);
                     allIndirectDependents.Add(indirectDependent);
 
                     foreach (string s in deeper)
@@ -315,15 +271,18 @@ namespace SS
             return allIndirectDependents;
         }
 
-        // todo: doc comment, make nice, etc
-        private HashSet<string> GetHashSetOfDirectDependents(string start)
+        /// <summary>
+        /// Returns an ISet containing all dependents of cell (name), including cell (name).
+        /// </summary>
+        private ISet<string> GetAllDependents(string name)
         {
-            HashSet<string> hashSet = new HashSet<string>();
-            foreach (string dependent in dependencies.GetDependents(start))
-            {
-                hashSet.Add(dependent);
-            }
-            return hashSet;
+            // GetCellsToRecalculate will throw a CircularException if result contains
+            // a circular dependency.
+            GetCellsToRecalculate(name);
+
+            HashSet<string> direct = GetHashSetOfDirectDependents(name);
+            direct.Add(name);
+            return GetIndirectDependents(direct);
         }
     }
 
@@ -377,6 +336,10 @@ namespace SS
     /// </summary>
     internal class CellContainer
     {
+        /// <summary>
+        /// A dictionary containing all of the CellContainer's (and thus, the Spreadsheet's)
+        /// Cells. Its keys are indexed by a string with each Cell's name.
+        /// </summary>
         private Dictionary<string, Cell> cells;
         
         /// <summary>
@@ -416,6 +379,19 @@ namespace SS
             else
             {
                 return "";
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the name of all (non-empty) Cells in the Cellcontainer.
+        /// Actually returns all Cells, because non-empty cells are only abstractly represented,
+        /// and not actually contained.
+        /// </summary>
+        public IEnumerable<string> GetNamesOfAllNonemptyCells()
+        {
+            foreach (string s in cells.Keys)
+            {
+                yield return s;
             }
         }
     }
