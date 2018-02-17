@@ -27,6 +27,19 @@ namespace SpreadsheetTests
             Assert.AreEqual((double)19, ss.GetCellContents("pNzlefEEKN942"));
             Assert.AreEqual("who knows what this will be?", ss.GetCellContents("zYLd419"));
             Assert.AreEqual(f, ss.GetCellContents("inFEWNnnk107"));
+
+            // Tests for Formula cells included in SCCFIndirect()
+        }
+
+        [TestMethod]
+        public void GCCEmpty()
+        {
+            Spreadsheet ss = new Spreadsheet();
+
+            for (int i = 1; i < 100; i++)
+            {
+                Assert.AreEqual("", ss.GetCellContents("A" + i.ToString()));
+            }
         }
 
         #endregion
@@ -95,7 +108,7 @@ namespace SpreadsheetTests
 
         #endregion
 
-        #region SetCellContents (all overloads) Tests
+        #region SetCellContents (double, string) Tests
 
         [TestMethod]
         public void SCCD()
@@ -139,26 +152,114 @@ namespace SpreadsheetTests
             Assert.AreEqual("finally:", ss.GetCellContents("AdD1423"));
         }
 
-        [TestMethod]
-        public void SCCF1()
+        #endregion
+
+        #region SetCellContents (formula) Tests
+
+        /// <summary>
+        /// This helper method will set up a Spreadsheet with formula dependencies for other
+        /// SCCF tests.
+        /// 
+        /// Note: this method only provides direct dependencies; indirect dependencies will be
+        /// added on top of existing ones.
+        /// </summary>
+        public Spreadsheet SCCFStart()
         {
             Spreadsheet ss = new Spreadsheet();
-            ss.SetCellContents("Lib89", new Formula());
+            HashSet<string> test = (HashSet<string>)ss.SetCellContents("Lib89", new Formula());
             Formula f = new Formula();
+            Assert.AreEqual(1, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89" }));
             Assert.AreEqual(f, ss.GetCellContents("Lib89"));
 
             f = new Formula("a20 - b16 + (876 * b16) / 7");
-            ss.SetCellContents("Lib89", f);
+            test = (HashSet<string>)ss.SetCellContents("Lib89", f);
             Assert.AreEqual(f, ss.GetCellContents("Lib89"));
+            Assert.AreEqual(1, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89" }));
+
+            test = (HashSet<string>)ss.SetCellContents("a20", 5);
+            Assert.AreEqual(2, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20", "Lib89" }));
+
+            test = (HashSet<string>)ss.SetCellContents("b16", "string boi");
+            Assert.AreEqual(2, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16" }));
+
+            f = new Formula("a20 + 1");
+            test = (HashSet<string>)ss.SetCellContents("b16", f);
+            Assert.AreEqual(2, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16" }));
+
+            test = (HashSet<string>)ss.SetCellContents("a20", 7);
+            Assert.AreEqual(3, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20", "Lib89", "b16" }));
+
+            return ss;
+        }
+
+        /// <summary>
+        /// Tests only the material in SCCFStart. Makes sure at least direct formual dependencies
+        /// are functioning as intended.
+        /// </summary>
+        [TestMethod]
+        public void SCCFDirect()
+        {
+            // Make sure all the assertions in SCCFStart are passing.
+            SCCFStart();
+        }
+
+        [TestMethod]
+        public void SCCFIndirect()
+        {
+            // Start with the spreadsheet from SCCFStart. We'll add indirect dependencies soon.
+            Spreadsheet ss = SCCFStart();
+
+            // Making sure GetCellContents retrieves the right thing, after all the modifications
+            // we've made.
+            Formula f = (Formula)ss.GetCellContents("Lib89");
+            Assert.AreEqual(new Formula("a20 - b16 + (876 * b16) / 7").ToString(), f.ToString());
+
+            // Here comes the indirect part!!
+            f = new Formula("AD19 * 2");
+            ss.SetCellContents("b16", f);
+            f = new Formula("a20 + 1");
+            ss.SetCellContents("AD19", f);
+            HashSet<string> test = (HashSet<string>)ss.SetCellContents("a20", "doesn't even matter");
+            Assert.AreEqual(4, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16", "AD19", "a20" }));
+
+            // passing this means that either it works properly, or it isn't deleting dependencies
+            // it isn't deleting dependencies
+            f = new Formula("a20 * a20");
+            ss.SetCellContents("Lib89", f);
+            f = new Formula("Lib89 + 42");
+            ss.SetCellContents("b16", f);
+            test = (HashSet<string>)ss.SetCellContents("a20", "here we go again");
+            Assert.AreEqual(4, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16", "AD19", "a20" }));
+
+
+            // todo: delete this
+            // Just to make sure we're golden:
+            //f = new Formula("b16 + 1");
+            //ss.SetCellContents("Pd5", f);
+            //f = new Formula("Pd5 - AD19");
+            //ss.SetCellContents("jk101", f);
+            //test = (HashSet<string>)ss.SetCellContents("a20", "doesn't even matter");
+            //Assert.AreEqual(6, test.Count);
+            //Assert.IsTrue(test.SetEquals(new HashSet<string>
+            //{
+            //    "Lib89", "a20", "b16", "AD19", "Pd5", "jk101"
+            //}));
 
             // todo: test return ISet (MAKE SURE 3+ LAYERS DEEP WORKS)
             // also make sure disconnected one's arent included
-            // also make sure dependents != dependees...
         }
 
         [TestMethod]
         [ExpectedException(typeof(InvalidNameException))]
-        public void SCCF2()
+        public void SCCFInvalidName()
         {
             Spreadsheet ss = new Spreadsheet();
             Formula f = new Formula("a12 / b + 72");
@@ -167,7 +268,7 @@ namespace SpreadsheetTests
 
         [TestMethod]
         [ExpectedException(typeof(CircularException))]
-        public void SCCF3()
+        public void SCCFCircular()
         {
             // todo: test circular dependencies
         }

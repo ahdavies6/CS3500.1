@@ -113,7 +113,7 @@ namespace SS
         /// </summary>
         public override object GetCellContents(string name)
         {
-            return cells.GetCellContent(name);
+            return cells.GetCellContents(name);
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace SS
         {
             if (IsValidCellName(name))
             {
-                cells.SetCellContent(name, number);
+                cells.SetCellContents(name, number);
 
                 return GetAllDependents(name);
             }
@@ -158,7 +158,7 @@ namespace SS
             {
                 if (IsValidCellName(name))
                 {
-                    cells.SetCellContent(name, text);
+                    cells.SetCellContents(name, text);
 
                     return GetAllDependents(name);
                 }
@@ -181,29 +181,44 @@ namespace SS
         /// Otherwise, if changing the contents of the named cell to be the formula would cause a 
         /// circular dependency, throws a CircularException.
         /// 
+        /// Spreadsheets are never allowed to contain a combination of Formulas that establish
+        /// a circular dependency.  A circular dependency exists when a cell depends on itself.
+        /// For example, suppose that A1 contains B1*2, B1 contains C1*2, and C1 contains A1*2.
+        /// A1 depends on B1, which depends on C1, which depends on A1.  That's a circular
+        /// dependency.
+        /// 
         /// Otherwise, the contents of the named cell becomes formula.  The method returns a
         /// Set consisting of name plus the names of all other cells whose value depends,
         /// directly or indirectly, on the named cell.
         /// 
         /// For example, if name is A1, B1 contains A1*2, and C1 contains B1+A1, the
         /// set {A1, B1, C1} is returned.
+        /// 
+        /// If a cell's contents is a Formula, its value is either a double or a FormulaError.
+        /// The value of a Formula, of course, can depend on the values of variables.  The value 
+        /// of a Formula variable is the value of the spreadsheet cell it names (if that cell's 
+        /// value is a double) or is undefined (otherwise).  If a Formula depends on an undefined
+        /// variable or on a division by zero, its value is a FormulaError.  Otherwise, its value
+        /// is a double, as specified in Formula.Evaluate.
         /// </summary>
         public override ISet<string> SetCellContents(string name, Formula formula)
         {
-            foreach (string variable in formula.GetVariables())
+            // todo: there's some other stuff in the specs we need to confirm
+            HashSet<string> vars = (HashSet<string>)formula.GetVariables();
+            foreach (string variable in vars)
             {
                 if (!IsValidCellName(variable))
                 {
                     throw new InvalidNameException();
                 }
             }
+            dependencies.ReplaceDependees(name, vars);
             // todo: CircularException detection
             if (IsValidCellName(name))
             {
-                cells.SetCellContent(name, formula);
+                cells.SetCellContents(name, formula);
 
-                // todo: return correct thing here
-                return new HashSet<string> { };
+                return GetAllDependents(name);
             }
             else
             {
@@ -230,7 +245,10 @@ namespace SS
         /// </summary>
         protected override IEnumerable<string> GetDirectDependents(string name)
         {
-            return new HashSet<string>();
+            // todo: remove this
+            // OG not broken
+            //return new HashSet<string>();
+            return dependencies.GetDependents(name);
         }
 
         /// <summary>
@@ -239,11 +257,16 @@ namespace SS
         private ISet<string> GetAllDependents(string name)
         {
             HashSet<string> allDependents = new HashSet<string> { name };
-            foreach (string s in GetAllDependents(new HashSet<string> { name }))
+            // todo: make this work eventually (repair recursive overload)
+            //foreach (string s in GetAllDependents(new HashSet<string> { name }))
+            //{
+            //    allDependents.Add(s);
+            //}
+            foreach (string s in GetDirectDependents(name))
             {
                 allDependents.Add(s);
             }
-            return (HashSet<string>)GetAllDependents(allDependents);
+            return allDependents;
         }
 
         /// <summary>
@@ -254,15 +277,17 @@ namespace SS
         /// </summary>
         private ISet<string> GetAllDependents(ISet<string> names)
         {
-            HashSet<string> result = (HashSet<string>)names;
-            foreach (string s in result)
-            {
-                foreach (string t in GetAllDependents((HashSet<string>)GetDirectDependents(s)))
-                {
-                    result.Add(t);
-                }
-            }
-            return result;
+            //HashSet<string> result = (HashSet<string>)names;
+            //foreach (string s in result)
+            //{
+            //    foreach (string t in GetAllDependents((HashSet<string>)GetDirectDependents(s)))
+            //    {
+            //        result.Add(t);
+            //    }
+            //}
+            //return result;
+            // todo: get above to work, or write new code that actually recurses as far as is necessary.
+            return new HashSet<string> { };
         }
     }
 
@@ -291,12 +316,12 @@ namespace SS
         /// The contents of a cell can be (1) a string, (2) a double, or (3) a Formula.  If the
         /// contents is an empty string, we say that the cell is empty.
         /// </summary>
-        public object Content
+        public object Contents
         {
-            get { return _content; }
-            set { _content = value; }
+            get { return _contents; }
+            set { _contents = value; }
         }
-        private object _content;
+        private object _contents;
 
         /// <summary>
         /// Initializes this cell, which will be named (name) and contain content (content).
@@ -304,7 +329,7 @@ namespace SS
         /// </summary>
         public Cell(object content)
         {
-            _content = content;
+            _contents = content;
         }
     }
 
@@ -330,11 +355,11 @@ namespace SS
         /// Creates a new cell in cells with name (name) and content (content).
         /// By virtue of SetCellContents, (content) will not be of type string, double, or Formula.
         /// </summary>
-        public void SetCellContent(string name, object content)
+        public void SetCellContents(string name, object content)
         {
             if (cells.ContainsKey(name))
             {
-                cells[name].Content = content;
+                cells[name].Contents = content;
             }
             else
             {
@@ -346,11 +371,11 @@ namespace SS
         /// Returns the content of cell (name). If cell (name) isn't in cells yet, returns default
         /// value "".
         /// </summary>
-        public object GetCellContent(string name)
+        public object GetCellContents(string name)
         {
             if (cells.ContainsKey(name))
             {
-                return cells[name].Content;
+                return cells[name].Contents;
             }
             else
             {
