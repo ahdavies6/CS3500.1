@@ -212,24 +212,20 @@ namespace SpreadsheetTests
         [TestMethod]
         public void SCCFIndirect()
         {
-            // Start with the spreadsheet from SCCFStart. We'll add indirect dependencies soon.
             Spreadsheet ss = SCCFStart();
-
-            // Making sure GetCellContents retrieves the right thing, after all the modifications
-            // we've made.
             Formula f = (Formula)ss.GetCellContents("Lib89");
             Assert.AreEqual(new Formula("a20 - b16 + (876 * b16) / 7").ToString(), f.ToString());
+            HashSet<string> test = (HashSet<string>)ss.SetCellContents("a20", "let's begin");
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20", "Lib89", "b16" }));
 
-            // 2 layers
             f = new Formula("AD19 * 2");
             ss.SetCellContents("b16", f);
             f = new Formula("a20 + 1");
             ss.SetCellContents("AD19", f);
-            HashSet<string> test = (HashSet<string>)ss.SetCellContents("a20", "doesn't even matter");
+            test = (HashSet<string>)ss.SetCellContents("a20", "doesn't even matter");
             Assert.AreEqual(4, test.Count);
             Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16", "AD19", "a20" }));
 
-            // 4 layers
             f = new Formula("b16 + 1");
             ss.SetCellContents("Pd5", f);
             f = new Formula("Pd5 - AD19");
@@ -241,26 +237,32 @@ namespace SpreadsheetTests
                 "Lib89", "a20", "b16", "AD19", "Pd5", "jk101"
             }));
 
-            // 1 more
             f = new Formula("jk101 - 1");
-            ss.SetCellContents("Next1", f);
+            test = (HashSet<string>)ss.SetCellContents("Next1", f);
+            Assert.AreEqual(1, test.Count);
             f = new Formula("Next1 * jk101");
-            ss.SetCellContents("Next2", f);
+            test = (HashSet<string>)ss.SetCellContents("Next2", f);
+            Assert.AreEqual(1, test.Count);
             f = new Formula("Next2 - a20");
-            ss.SetCellContents("Next3", f);
+            test = (HashSet<string>)ss.SetCellContents("Next3", f);
+            Assert.AreEqual(1, test.Count);
             test = (HashSet<string>)ss.SetCellContents("a20", "irrelevant");
             Assert.AreEqual(9, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string>
+            {
+                "Lib89", "a20", "b16", "AD19", "Pd5", "jk101", "Next1", "Next2", "Next3"
+            }));
 
-            // todo: test return ISet (MAKE SURE 3+ LAYERS DEEP WORKS)
-            // also make sure disconnected ones arent included
-            // also make sure we don't get back dependees when we want dependents
+            test = (HashSet<string>)ss.SetCellContents("Next3", "whocares");
+            Assert.AreEqual(1, test.Count);
         }
 
         [TestMethod]
-        public void SCCFFStress()
+        public void SCCFStress()
         {
             Spreadsheet ss = new Spreadsheet();
-            ss.SetCellContents("ROOT1", 0);
+            HashSet<string> test = (HashSet<string>)ss.SetCellContents("ROOT1", 0);
+            Assert.AreEqual(1, test.Count);
             for (int i = 1; i <= 100; i++)
             {
                 Formula f = new Formula("ROOT1");
@@ -281,36 +283,24 @@ namespace SpreadsheetTests
                 f = new Formula("E" + i.ToString());
                 ss.SetCellContents("STUB1", f);
 
-                //for (int b = 1; b <= 10; b++)
-                //{
-                //    f = new Formula("A" + a.ToString());
-                //    ss.SetCellContents("B" + b.ToString(), f);
-
-                //    for (int c = 1; c <= 10; c++)
-                //    {
-                //        f = new Formula("B" + b.ToString());
-                //        ss.SetCellContents("C" + c.ToString(), f);
-
-                //        for (int d = 1; d <= 10; d++)
-                //        {
-                //            f = new Formula("C" + c.ToString());
-                //            ss.SetCellContents("D" + d.ToString(), f);
-
-                //            for (int e = 1; e <= 10; e++)
-                //            {
-                //                f = new Formula("D" + d.ToString());
-                //                ss.SetCellContents("E" + e.ToString(), f);
-
-                //                f = new Formula("E" + e.ToString());
-                //                ss.SetCellContents("STUB1", f);
-                //            }
-                //        }
-                //    }
-                //}
+                test = (HashSet<string>)ss.SetCellContents("ROOT1", 0);
+                Assert.AreEqual(i * 5 + 2, test.Count);
             }
 
-            HashSet<string> test = (HashSet<string>)ss.SetCellContents("ROOT1", 1);
+            test = (HashSet<string>)ss.SetCellContents("ROOT1", 0);
             Assert.AreEqual(502, test.Count);
+
+            test = (HashSet<string>)ss.SetCellContents("STUB1", "why bother");
+            Assert.AreEqual(1, test.Count);
+
+            test = (HashSet<string>)ss.SetCellContents("ROOT1", 0);
+            Assert.AreEqual(498, test.Count);
+
+            test = (HashSet<string>)ss.SetCellContents("B3", 0);
+            Assert.AreEqual(3, test.Count);
+
+            test = (HashSet<string>)ss.SetCellContents("ROOT1", 0);
+            Assert.AreEqual(501, test.Count);
         }
 
         [TestMethod]

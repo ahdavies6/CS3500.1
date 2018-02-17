@@ -60,6 +60,9 @@ namespace SS
         // todo: figure out what else (beyond "GDD") needs to be done regarding GCTR/Visit)
         // todo: remove all comments (including todos)
 
+        // todo: delete this one for sure
+        private int numRecursion = 0;
+
         /// <summary>
         /// All cells in the spreadsheet.
         /// </summary>
@@ -255,19 +258,7 @@ namespace SS
         /// </summary>
         private ISet<string> GetAllDependents(string name)
         {
-            HashSet<string> allDependents = new HashSet<string> { name };
-            // note: this next line can't use allDependents as the argument for GetAllDependents, because
-            // that would change an IEnumerable as we're enumerating through it, which is not allowed
-            // note: direct is directDependent, indirect is indirectDependents
-            foreach (string direct in GetDirectDependents(name))
-            {
-                allDependents.Add(direct);
-                foreach (string indirect in RecursiveGetAllDependents(direct))
-                {
-                    allDependents.Add(indirect);
-                }
-            }
-            return allDependents;
+            return WrapperBoi(name);
         }
 
         /// <summary>
@@ -278,35 +269,61 @@ namespace SS
         /// </summary>
         private IEnumerable<string> RecursiveGetAllDependents(string dependent)
         {
-            // todo: make this all recursive so it works on n layers
-            // only works on up to two layers
             foreach (string indirect in GetDirectDependents(dependent))
             {
-                yield return indirect;
-                foreach (string nextIndirect in GetDirectDependents(indirect))
+                foreach (string next in RecursiveGetAllDependents(indirect))
                 {
-                    yield return nextIndirect;
+                    yield return next;
                 }
-                // literally just performs GetDirectDependents
-                //foreach (string t in GetDirectDependents(s))
-                //{
-                //    yield return t;
-                //}
             }
-            // todo: end up removing this
-            // First (very, very failed) attempt
-            //HashSet<string> result = (HashSet<string>)names;
-            //foreach (string s in result)
-            //{
-            //    foreach (string t in GetAllDependents((HashSet<string>)GetDirectDependents(s)))
-            //    {
-            //        result.Add(t);
-            //    }
-            //}
-            //return result;
-            // todo: end up removing this, too
-            // OG boi
-            //return new HashSet<string> { };
+        }
+
+        // todo: doc comment, make nice, etc
+        private HashSet<string> WrapperBoi(string start)
+        {
+            HashSet<string> candyBar = GetHashSetOfDirectDependents(start);
+            candyBar.Add(start);
+            return CandyBoi(candyBar);
+        }
+
+        // todo: delete this
+        /// <summary>
+        /// Helper method for OrSatanIAmNotPicky.
+        /// 
+        /// Gets all the indirect dependents from a HashSet (directDependents) of direct dependents
+        /// of a cell.
+        /// </summary>
+        private HashSet<string> CandyBoi(HashSet<string> directDependents)
+        {
+            numRecursion++;
+            HashSet<string> allIndirectDependents = new HashSet<string>();
+            foreach (string directDependent in directDependents)
+            {
+                HashSet<string> nextLayerIndirectDependents = GetHashSetOfDirectDependents(directDependent);
+                foreach (string indirectDependent in nextLayerIndirectDependents)
+                {
+                    HashSet<string> deeper = CandyBoi(nextLayerIndirectDependents);
+                    allIndirectDependents.Add(indirectDependent);
+
+                    foreach (string s in deeper)
+                    {
+                        allIndirectDependents.Add(s);
+                    }
+                }
+                allIndirectDependents.Add(directDependent);
+            }
+            return allIndirectDependents;
+        }
+
+        // todo: doc comment, make nice, etc
+        private HashSet<string> GetHashSetOfDirectDependents(string start)
+        {
+            HashSet<string> hashSet = new HashSet<string>();
+            foreach (string dependent in dependencies.GetDependents(start))
+            {
+                hashSet.Add(dependent);
+            }
+            return hashSet;
         }
     }
 
