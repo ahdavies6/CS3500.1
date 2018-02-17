@@ -256,47 +256,61 @@ namespace SpreadsheetTests
             // also make sure we don't get back dependees when we want dependents
         }
 
-        // 52 nodes; 211,111 connections
         [TestMethod]
         public void SCCFFStress()
         {
             Spreadsheet ss = new Spreadsheet();
             ss.SetCellContents("ROOT1", 0);
-            for (int a = 1; a <= 10; a++)
+            for (int i = 1; i <= 100; i++)
             {
                 Formula f = new Formula("ROOT1");
-                ss.SetCellContents("A" + a.ToString(), f);
+                ss.SetCellContents("A" + i.ToString(), f);
 
-                for (int b = 1; b <= 10; b++)
-                {
-                    f = new Formula("A" + a.ToString());
-                    ss.SetCellContents("B" + b.ToString(), f);
+                f = new Formula("A" + i.ToString());
+                ss.SetCellContents("B" + i.ToString(), f);
 
-                    for (int c = 1; c <= 10; c++)
-                    {
-                        f = new Formula("B" + b.ToString());
-                        ss.SetCellContents("C" + c.ToString(), f);
+                f = new Formula("B" + i.ToString());
+                ss.SetCellContents("C" + i.ToString(), f);
 
-                        for (int d = 1; d <= 10; d++)
-                        {
-                            f = new Formula("C" + c.ToString());
-                            ss.SetCellContents("D" + d.ToString(), f);
+                f = new Formula("C" + i.ToString());
+                ss.SetCellContents("D" + i.ToString(), f);
 
-                            for (int e = 1; e <= 10; e++)
-                            {
-                                f = new Formula("D" + d.ToString());
-                                ss.SetCellContents("E" + e.ToString(), f);
+                f = new Formula("D" + i.ToString());
+                ss.SetCellContents("E" + i.ToString(), f);
 
-                                f = new Formula("E" + e.ToString());
-                                ss.SetCellContents("STUB1", f);
-                            }
-                        }
-                    }
-                }
+                f = new Formula("E" + i.ToString());
+                ss.SetCellContents("STUB1", f);
+
+                //for (int b = 1; b <= 10; b++)
+                //{
+                //    f = new Formula("A" + a.ToString());
+                //    ss.SetCellContents("B" + b.ToString(), f);
+
+                //    for (int c = 1; c <= 10; c++)
+                //    {
+                //        f = new Formula("B" + b.ToString());
+                //        ss.SetCellContents("C" + c.ToString(), f);
+
+                //        for (int d = 1; d <= 10; d++)
+                //        {
+                //            f = new Formula("C" + c.ToString());
+                //            ss.SetCellContents("D" + d.ToString(), f);
+
+                //            for (int e = 1; e <= 10; e++)
+                //            {
+                //                f = new Formula("D" + d.ToString());
+                //                ss.SetCellContents("E" + e.ToString(), f);
+
+                //                f = new Formula("E" + e.ToString());
+                //                ss.SetCellContents("STUB1", f);
+                //            }
+                //        }
+                //    }
+                //}
             }
 
             HashSet<string> test = (HashSet<string>)ss.SetCellContents("ROOT1", 1);
-            Assert.AreEqual(211111, test.Count);
+            Assert.AreEqual(502, test.Count);
         }
 
         [TestMethod]
