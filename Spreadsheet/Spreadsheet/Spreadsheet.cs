@@ -54,7 +54,9 @@ namespace SS
     {
         // todo: make sure everything has Summary tags
         // todo: implement all abstract methods
-
+        // todo: look through all requirements in each spec to make sure it does everything it's supposed
+        // to and covers all corner cases
+        // todo: look through all doc comments and make sure they're what they need to be
         // todo: figure out what else (beyond "GDD") needs to be done regarding GCTR/Visit)
         // todo: remove all comments (including todos)
 
@@ -254,40 +256,42 @@ namespace SS
         private ISet<string> GetAllDependents(string name)
         {
             HashSet<string> allDependents = new HashSet<string> { name };
-            try
+            // note: this next line can't use allDependents as the argument for GetAllDependents, because
+            // that would change an IEnumerable as we're enumerating through it, which is not allowed
+            // note: direct is directDependent, indirect is indirectDependents
+            foreach (string direct in GetDirectDependents(name))
             {
-                // note: this next line can't use allDependents as the argument for GetAllDependents, because
-                // that would change an IEnumerable as we're enumerating through it, which is not allowed
-                foreach (string s in GetAllDependents(new HashSet<string> { name }))
+                allDependents.Add(direct);
+                foreach (string indirect in RecursiveGetAllDependents(direct))
                 {
-                    allDependents.Add(s);
+                    allDependents.Add(indirect);
                 }
-                return allDependents;
             }
-            // if cell (name) has no dependents, GetAllDependents will return null, which will cause a
-            // NullReferenceException
-            catch (NullReferenceException)
-            {
-                return allDependents;
-            }
+            return allDependents;
         }
 
         /// <summary>
-        /// Recursive overload helper method for GetAllDependents(string name).
+        /// Recursive overload helper method for GetAllDependents().
         /// 
         /// Returns an IEnumerable containing all direct *and indirect* dependents of all cells whose
         /// names are in (names).
         /// </summary>
-        private IEnumerable<string> GetAllDependents(IEnumerable<string> names)
+        private IEnumerable<string> RecursiveGetAllDependents(string dependent)
         {
             // todo: make this all recursive so it works on n layers
-            // only works on one layer
-            foreach (string s in names)
+            // only works on up to two layers
+            foreach (string indirect in GetDirectDependents(dependent))
             {
-                foreach (string t in GetDirectDependents(s))
+                yield return indirect;
+                foreach (string nextIndirect in GetDirectDependents(indirect))
                 {
-                    yield return t;
+                    yield return nextIndirect;
                 }
+                // literally just performs GetDirectDependents
+                //foreach (string t in GetDirectDependents(s))
+                //{
+                //    yield return t;
+                //}
             }
             // todo: end up removing this
             // First (very, very failed) attempt
