@@ -245,38 +245,52 @@ namespace SS
         /// </summary>
         protected override IEnumerable<string> GetDirectDependents(string name)
         {
-            // todo: remove this
-            // OG not broken
-            //return new HashSet<string>();
             return dependencies.GetDependents(name);
         }
 
         /// <summary>
-        /// Returns an ISet containing all dependents of cell named (name), including cell named (name).
+        /// Returns an ISet containing all dependents of cell (name), including cell (name).
         /// </summary>
         private ISet<string> GetAllDependents(string name)
         {
             HashSet<string> allDependents = new HashSet<string> { name };
-            // todo: make this work eventually (repair recursive overload)
-            //foreach (string s in GetAllDependents(new HashSet<string> { name }))
-            //{
-            //    allDependents.Add(s);
-            //}
-            foreach (string s in GetDirectDependents(name))
+            try
             {
-                allDependents.Add(s);
+                // note: this next line can't use allDependents as the argument for GetAllDependents, because
+                // that would change an IEnumerable as we're enumerating through it, which is not allowed
+                foreach (string s in GetAllDependents(new HashSet<string> { name }))
+                {
+                    allDependents.Add(s);
+                }
+                return allDependents;
             }
-            return allDependents;
+            // if cell (name) has no dependents, GetAllDependents will return null, which will cause a
+            // NullReferenceException
+            catch (NullReferenceException)
+            {
+                return allDependents;
+            }
         }
 
         /// <summary>
         /// Recursive overload helper method for GetAllDependents(string name).
         /// 
-        /// Returns an ISet containing all direct and indirect dependents of all cells whose
+        /// Returns an IEnumerable containing all direct *and indirect* dependents of all cells whose
         /// names are in (names).
         /// </summary>
-        private ISet<string> GetAllDependents(ISet<string> names)
+        private IEnumerable<string> GetAllDependents(IEnumerable<string> names)
         {
+            // todo: make this all recursive so it works on n layers
+            // only works on one layer
+            foreach (string s in names)
+            {
+                foreach (string t in GetDirectDependents(s))
+                {
+                    yield return t;
+                }
+            }
+            // todo: end up removing this
+            // First (very, very failed) attempt
             //HashSet<string> result = (HashSet<string>)names;
             //foreach (string s in result)
             //{
@@ -286,8 +300,9 @@ namespace SS
             //    }
             //}
             //return result;
-            // todo: get above to work, or write new code that actually recurses as far as is necessary.
-            return new HashSet<string> { };
+            // todo: end up removing this, too
+            // OG boi
+            //return new HashSet<string> { };
         }
     }
 

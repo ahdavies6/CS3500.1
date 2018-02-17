@@ -166,8 +166,8 @@ namespace SpreadsheetTests
         public Spreadsheet SCCFStart()
         {
             Spreadsheet ss = new Spreadsheet();
-            HashSet<string> test = (HashSet<string>)ss.SetCellContents("Lib89", new Formula());
             Formula f = new Formula();
+            HashSet<string> test = (HashSet<string>)ss.SetCellContents("Lib89", f);
             Assert.AreEqual(1, test.Count);
             Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89" }));
             Assert.AreEqual(f, ss.GetCellContents("Lib89"));
@@ -220,7 +220,7 @@ namespace SpreadsheetTests
             Formula f = (Formula)ss.GetCellContents("Lib89");
             Assert.AreEqual(new Formula("a20 - b16 + (876 * b16) / 7").ToString(), f.ToString());
 
-            // Here comes the indirect part!!
+            // 2 layers
             f = new Formula("AD19 * 2");
             ss.SetCellContents("b16", f);
             f = new Formula("a20 + 1");
@@ -229,29 +229,17 @@ namespace SpreadsheetTests
             Assert.AreEqual(4, test.Count);
             Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16", "AD19", "a20" }));
 
-            // passing this means that either it works properly, or it isn't deleting dependencies
-            // it isn't deleting dependencies
-            f = new Formula("a20 * a20");
-            ss.SetCellContents("Lib89", f);
-            f = new Formula("Lib89 + 42");
-            ss.SetCellContents("b16", f);
-            test = (HashSet<string>)ss.SetCellContents("a20", "here we go again");
-            Assert.AreEqual(4, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16", "AD19", "a20" }));
-
-
-            // todo: delete this
-            // Just to make sure we're golden:
-            //f = new Formula("b16 + 1");
-            //ss.SetCellContents("Pd5", f);
-            //f = new Formula("Pd5 - AD19");
-            //ss.SetCellContents("jk101", f);
-            //test = (HashSet<string>)ss.SetCellContents("a20", "doesn't even matter");
-            //Assert.AreEqual(6, test.Count);
-            //Assert.IsTrue(test.SetEquals(new HashSet<string>
-            //{
-            //    "Lib89", "a20", "b16", "AD19", "Pd5", "jk101"
-            //}));
+            // 4 layers
+            f = new Formula("b16 + 1");
+            ss.SetCellContents("Pd5", f);
+            f = new Formula("Pd5 - AD19");
+            ss.SetCellContents("jk101", f);
+            test = (HashSet<string>)ss.SetCellContents("a20", "doesn't even matter");
+            Assert.AreEqual(6, test.Count);
+            Assert.IsTrue(test.SetEquals(new HashSet<string>
+            {
+                "Lib89", "a20", "b16", "AD19", "Pd5", "jk101"
+            }));
 
             // todo: test return ISet (MAKE SURE 3+ LAYERS DEEP WORKS)
             // also make sure disconnected one's arent included
