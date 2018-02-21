@@ -98,7 +98,14 @@ namespace SS
         /// </summary>
         private bool IsValidCellName(string name)
         {
-            return Regex.IsMatch(name, validCellNamePattern);
+            if (name != null)
+            {
+                return Regex.IsMatch(name, validCellNamePattern);
+            }
+            else
+            {
+                throw new InvalidNameException();
+            }
         }
 
         /// <summary>
@@ -109,7 +116,14 @@ namespace SS
         /// </summary>
         public override object GetCellContents(string name)
         {
-            return cells.GetCellContents(name);
+            if (IsValidCellName(name))
+            {
+                return cells.GetCellContents(name);
+            }
+            else
+            {
+                throw new InvalidNameException();
+            }
         }
 
         /// <summary>
@@ -311,20 +325,35 @@ namespace SS
         /// The contents of a cell can be (1) a string, (2) a double, or (3) a Formula.  If the
         /// contents is an empty string, we say that the cell is empty.
         /// </summary>
-        public object Contents
+        public dynamic Contents
         {
             get { return _contents; }
-            set { _contents = value; }
+            set { SetContent(value); }
         }
-        private object _contents;
+        private dynamic _contents;
 
         /// <summary>
         /// Initializes this cell, which will be named (name) and contain content (content).
+        /// 
         /// Note: content will necessarily, by virtue of SetCellContents, be of type string, double, or Formula.
+        /// However, I have still included an ArgumentOutOfRangeException if it is not one of these types,
+        /// to ensure that all future use cases are fulfill this specification.
         /// </summary>
-        public Cell(object content)
+        public Cell(dynamic content)
         {
-            _contents = content;
+            SetContent(content);
+        }
+
+        private void SetContent(dynamic content)
+        {
+            if (content is double || content is string || content is Formula)
+            {
+                _contents = content;
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException();
+            }
         }
     }
 
@@ -352,9 +381,63 @@ namespace SS
 
         /// <summary>
         /// Creates a new cell in cells with name (name) and content (content).
-        /// By virtue of SetCellContents, (content) will not be of type string, double, or Formula.
+        /// 
+        /// This is a wrapper method which will call the correct SetCellContents, given the type
+        /// of content.
         /// </summary>
-        public void SetCellContents(string name, object content)
+        public void SetCellContents(string name, dynamic content)
+        {
+            if (content is double || content is string || content is Formula)
+            {
+                SetCellContents(name, content);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        /// <summary>
+        /// Creates a new cell in cells with name (name) and content of double (content).
+        /// </summary>
+        private void SetCellContents(string name, double content)
+        {
+            if (cells.ContainsKey(name))
+            {
+                cells[name].Contents = content;
+            }
+            else
+            {
+                cells[name] = new Cell(content);
+            }
+        }
+
+        /// <summary>
+        /// Creates a new cell in cells with name (name) and content of string (content).
+        /// </summary>
+        private void SetCellContents(string name, string content)
+        {
+            if (content == "")
+            {
+                cells.Remove(name);
+            }
+            else
+            {
+                if (cells.ContainsKey(name))
+                {
+                    cells[name].Contents = content;
+                }
+                else
+                {
+                    cells[name] = new Cell(content);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates a new cell in cells with name (name) and content of Formula (content).
+        /// </summary>
+        private void SetCellContents(string name, Formula content)
         {
             if (cells.ContainsKey(name))
             {
@@ -372,13 +455,20 @@ namespace SS
         /// </summary>
         public object GetCellContents(string name)
         {
-            if (cells.ContainsKey(name))
+            if (name != null)
             {
-                return cells[name].Contents;
+                if (cells.ContainsKey(name))
+                {
+                    return cells[name].Contents;
+                }
+                else
+                {
+                    return "";
+                }
             }
             else
             {
-                return "";
+                throw new InvalidNameException();
             }
         }
 
@@ -391,7 +481,17 @@ namespace SS
         {
             foreach (string s in cells.Keys)
             {
-                yield return s;
+                if (cells[s].Contents.GetType() == typeof(string))
+                {
+                    if (cells[s].Contents != "")
+                    {
+                        yield return s;
+                    }
+                }
+                else
+                {
+                    yield return s;
+                }
             }
         }
     }
