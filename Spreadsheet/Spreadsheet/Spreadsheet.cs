@@ -211,10 +211,11 @@ namespace SS
 
             if (IsValidCellName(name))
             {
-                cells.SetCellContents(name, formula);
                 dependencies.ReplaceDependees(name, vars);
+                HashSet<string> result = (HashSet<string>)GetAllDependents(name);
 
-                return GetAllDependents(name);
+                cells.SetCellContents(name, formula);
+                return result;
             }
             else
             {
@@ -324,6 +325,8 @@ namespace SS
         /// 
         /// The contents of a cell can be (1) a string, (2) a double, or (3) a Formula.  If the
         /// contents is an empty string, we say that the cell is empty.
+        /// 
+        /// Note: set calls SetContent to make sure the dynamic parameter is always an allowable type.
         /// </summary>
         public dynamic Contents
         {
@@ -335,9 +338,9 @@ namespace SS
         /// <summary>
         /// Initializes this cell, which will be named (name) and contain content (content).
         /// 
-        /// Note: content will necessarily, by virtue of SetCellContents, be of type string, double, or Formula.
-        /// However, I have still included an ArgumentOutOfRangeException if it is not one of these types,
-        /// to ensure that all future use cases are fulfill this specification.
+        /// Note: content will necessarily, by virtue of SetCellContents, be of type string, double,
+        /// or Formula. However, this constructor still calls SetContent to make sure the dynamic
+        /// parameter is always an allowable type.
         /// </summary>
         public Cell(dynamic content)
         {
