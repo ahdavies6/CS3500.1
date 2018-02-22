@@ -285,7 +285,7 @@ namespace SS
             }
             return allIndirectDependents;
         }
-
+        
         /// <summary>
         /// Returns an ISet containing all dependents of cell (name), including cell (name).
         /// </summary>
