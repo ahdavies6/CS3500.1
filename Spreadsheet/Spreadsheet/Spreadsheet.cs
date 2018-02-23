@@ -71,7 +71,7 @@ namespace SS
         /// are accepted by IsValid.  On the other hand, "Z", "X07", and "hello" are not valid cell 
         /// names, regardless of IsValid.
         /// </summary>
-        private Regex IsValid
+        private Regex IsValid;
 
         // todo: finish
         /// <summary>
@@ -85,7 +85,9 @@ namespace SS
         /// </summary>
         public Spreadsheet(Regex isValid)
         {
-
+            IsValid = isValid;
+            cells = new CellContainer();
+            dependencies = new DependencyGraph();
         }
 
         /// <summary>
@@ -93,36 +95,42 @@ namespace SS
         /// </summary>
         public Spreadsheet() : this(new Regex(".*", RegexOptions.Singleline))
         {
-            cells = new CellContainer();
-            dependencies = new DependencyGraph();
         }
 
-        // todo: delete me?
         /// <summary>
-        /// A Regex pattern that will be used to determine whether a given cell name is valid.
-        /// 
-        /// Specification for valid cell name:
-        /// "A string s is a valid cell name if and only if it consists of one or more letters, 
-        /// followed by a non-zero digit, followed by zero or more digits.
-        /// For example, "A15", "a15", "XY32", and "BC7" are valid cell names.  On the other hand, 
-        /// "Z", "X07", and "hello" are not valid cell names."
+        /// Creates a Spreadsheet that is a duplicate of the spreadsheet saved in source.
+        ///
+        /// See the AbstractSpreadsheet.Save method and Spreadsheet.xsd for the file format 
+        /// specification.  
+        ///
+        /// If there's a problem reading source, throws an IOException.
+        ///
+        /// Else if the contents of source are not consistent with the schema in Spreadsheet.xsd, 
+        /// throws a SpreadsheetReadException.  
+        ///
+        /// Else if the IsValid string contained in source is not a valid C# regular expression, throws
+        /// a SpreadsheetReadException.  (If the exception is not thrown, this regex is referred to
+        /// below as oldIsValid.)
+        ///
+        /// Else if there is a duplicate cell name in the source, throws a SpreadsheetReadException.
+        /// (Two cell names are duplicates if they are identical after being converted to upper case.)
+        ///
+        /// Else if there is an invalid cell name or an invalid formula in the source, throws a 
+        /// SpreadsheetReadException.  (Use oldIsValid in place of IsValid in the definition of 
+        /// cell name validity.)
+        ///
+        /// Else if there is an invalid cell name or an invalid formula in the source, throws a
+        /// SpreadsheetVersionException.  (Use newIsValid in place of IsValid in the definition of
+        /// cell name validity.)
+        ///
+        /// Else if there's a formula that causes a circular dependency, throws a SpreadsheetReadException. 
+        ///
+        /// Else, create a Spreadsheet that is a duplicate of the one encoded in source except that
+        /// the new Spreadsheet's IsValid regular expression should be newIsValid.
         /// </summary>
-        private const string validCellNamePattern = "^[a-zA-Z]+[1-9][0-9]*$";
-
-        // todo: delete me?
-        /// <summary>
-        /// Helper method that returns whether (name) is a valid cell name.
-        /// </summary>
-        private bool IsValidCellName(string name)
+        public Spreadsheet(TextReader source, Regex newIsValid) : this(newIsValid)
         {
-            if (name != null)
-            {
-                return Regex.IsMatch(name, validCellNamePattern);
-            }
-            else
-            {
-                throw new InvalidNameException();
-            }
+            // todo: implement me
         }
 
         /// <summary>
@@ -161,6 +169,32 @@ namespace SS
         }
 
         /// <summary>
+        /// A Regex pattern that will be used to determine whether a given cell name is valid.
+        /// 
+        /// Specification for valid cell name:
+        /// "A string s is a valid cell name if and only if it consists of one or more letters, 
+        /// followed by a non-zero digit, followed by zero or more digits.
+        /// For example, "A15", "a15", "XY32", and "BC7" are valid cell names.  On the other hand, 
+        /// "Z", "X07", and "hello" are not valid cell names."
+        /// </summary>
+        private const string validCellNamePattern = "^[a-zA-Z]+[1-9][0-9]*$";
+
+        /// <summary>
+        /// Helper method that returns whether (name) is a valid cell name.
+        /// </summary>
+        private bool IsValidCellName(string name)
+        {
+            if (name != null)
+            {
+                return Regex.IsMatch(name, validCellNamePattern);
+            }
+            else
+            {
+                throw new InvalidNameException();
+            }
+        }
+
+        /// <summary>
         /// If name is null or invalid, throws an InvalidNameException.
         /// 
         /// Otherwise, returns the contents (as opposed to the value) of the named cell.  The return
@@ -170,6 +204,7 @@ namespace SS
         {
             if (IsValidCellName(name))
             {
+                name = name.ToUpper();
                 return cells.GetCellContents(name);
             }
             else
@@ -187,6 +222,7 @@ namespace SS
         public override object GetCellValue(string name)
         {
             // todo: implement me
+            // todo: READ "Implementation Considerations" ON PS6 PAGE (canvas)
             return new object();
         }
 
@@ -223,23 +259,51 @@ namespace SS
         /// </summary>
         public override ISet<String> SetContentsOfCell(string name, string content)
         {
-            // todo: check if comment on next line is true (and then remove it)
-            if (IsValidCellName(name)) // probably don't need else, because this method should take care of it
+            if (content == null)
+            {
+                throw new ArgumentNullException();
+            }
+
+            if (!IsValidCellName(name))
+            {
+                throw new InvalidNameException();
+            }
+
+            HashSet<string> result = new HashSet<string>();
+            name = name.ToUpper();
+
+            if (content.Length > 0)
             {
                 // if content is a number
                 if (Double.TryParse(content, out double number))
                 {
-                    SetCellContents(name, number);
+                    result = (HashSet<string>)SetCellContents(name, number);
                 }
-
                 // if content is a formula
+                // todo: make sure all the crap above gets fulfilled here (mostly thinking of errors)
                 else if (content[0] == '=')
                 {
-                    Formula formula = new Formula(content.Remove(0, 1), s => s.ToUpper(), );
+                    // todo: make sure that passing IsValidCellName as parameter works here
+                    content = content.Remove(0, 1);
+                    content = content.ToUpper();
 
-                    SetCellContents(name, )
+                    Formula formula = new Formula(content, s => s.ToUpper(), IsValidCellName);
+                    result = (HashSet<string>)SetCellContents(name, formula);
+                }
+                // content is a string
+                else
+                {
+                    result = (HashSet<string>)SetCellContents(name, content);
                 }
             }
+            // if (content) is an empty string, we will delete the cell
+            // note: calling SetCellContents with (content) of "" removes cell (name) from cells
+            else
+            {
+                result = (HashSet<string>)SetCellContents(name, content);
+            }
+
+            return result;
         }
 
         /// <summary>

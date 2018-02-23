@@ -31,10 +31,10 @@ namespace SpreadsheetTests
             Assert.AreEqual(1, test.Count);
             Assert.IsTrue(test.SetEquals(new HashSet<string> { "A1" }));
 
-            ss.SetContentsOfCell("bJFIOEdfsa123489701", "=A1 + 1");
+            ss.SetContentsOfCell("bJFIOEdfsa123489701".ToUpper(), "=A1 + 1");
             test = IEToHash(ss.GetNamesOfAllNonemptyCells());
             Assert.AreEqual(2, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "A1", "bJFIOEdfsa123489701" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "A1", "bJFIOEdfsa123489701".ToUpper() }));
         }
 
         #endregion
@@ -50,9 +50,10 @@ namespace SpreadsheetTests
             string f = "=a1 + b20 / 7";
             ss.SetContentsOfCell("inFEWNnnk107", f);
 
-            Assert.AreEqual((double)19, ss.GetCellContents("pNzlefEEKN942"));
-            Assert.AreEqual("who knows what this will be?", ss.GetCellContents("zYLd419"));
-            Assert.AreEqual(f, ss.GetCellContents("inFEWNnnk107"));
+            Assert.AreEqual((double)19, ss.GetCellContents("pNzlefEEKN942".ToUpper()));
+            Assert.AreEqual("who knows what this will be?", ss.GetCellContents("zYLd419".ToUpper()));
+            // todo: figure out why this one doesn't work without the .ToString()s
+            Assert.AreEqual(NormalizeFormulaString(f), ss.GetCellContents("inFEWNnnk107".ToUpper()).ToString());
         }
 
         [TestMethod]
@@ -139,19 +140,19 @@ namespace SpreadsheetTests
         {
             Spreadsheet ss = new Spreadsheet();
             HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("b60", "2");
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60".ToUpper() }));
             Assert.AreEqual((double)2, ss.GetCellContents("b60"));
 
             test = (HashSet<string>)ss.SetContentsOfCell("b60", "199");
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60".ToUpper() }));
             Assert.AreEqual((double)199, ss.GetCellContents("b60"));
 
             test = (HashSet<string>)ss.SetContentsOfCell("b60", "now I'm a string!");
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60".ToUpper() }));
             Assert.AreEqual("now I'm a string!", ss.GetCellContents("b60"));
 
             test = (HashSet<string>)ss.SetContentsOfCell("b60", "2");
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "b60".ToUpper() }));
             Assert.AreEqual((double)2, ss.GetCellContents("b60"));
         }
 
@@ -160,19 +161,19 @@ namespace SpreadsheetTests
         {
             Spreadsheet ss = new Spreadsheet();
             HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("AdD1423", "IsString");
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423".ToUpper() }));
             Assert.AreEqual("IsString", ss.GetCellContents("AdD1423"));
 
             test = (HashSet<string>)ss.SetContentsOfCell("AdD1423", "different one!");
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423".ToUpper() }));
             Assert.AreEqual("different one!", ss.GetCellContents("AdD1423"));
 
             test = (HashSet<string>)ss.SetContentsOfCell("AdD1423", "42");
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423".ToUpper() }));
             Assert.AreEqual((double)42, ss.GetCellContents("AdD1423"));
 
             test = (HashSet<string>)ss.SetContentsOfCell("AdD1423", "finally:");
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "AdD1423".ToUpper() }));
             Assert.AreEqual("finally:", ss.GetCellContents("AdD1423"));
         }
 
@@ -190,34 +191,33 @@ namespace SpreadsheetTests
         public Spreadsheet SCCFStart()
         {
             Spreadsheet ss = new Spreadsheet();
-            string f = "=";
-            HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("Lib89", f);
+            HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("Lib89", "a");
             Assert.AreEqual(1, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89" }));
-            Assert.AreEqual(f, ss.GetCellContents("Lib89"));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89".ToUpper() }));
+            Assert.AreEqual("a", ss.GetCellContents("Lib89"));
 
-            f = "=a20 - b16 + (876 * b16) / 7";
+            string f = "=a20 - b16 + (876 * b16) / 7";
             test = (HashSet<string>)ss.SetContentsOfCell("Lib89", f);
-            Assert.AreEqual(f, ss.GetCellContents("Lib89"));
+            Assert.AreEqual(NormalizeFormulaString(f), ss.GetCellContents("Lib89").ToString());
             Assert.AreEqual(1, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89".ToUpper() }));
 
             test = (HashSet<string>)ss.SetContentsOfCell("a20", "5");
             Assert.AreEqual(2, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20", "Lib89" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20".ToUpper(), "Lib89".ToUpper() }));
 
             test = (HashSet<string>)ss.SetContentsOfCell("b16", "string boi");
             Assert.AreEqual(2, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89".ToUpper(), "b16".ToUpper() }));
 
             f = "=a20 + 1";
             test = (HashSet<string>)ss.SetContentsOfCell("b16", f);
             Assert.AreEqual(2, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89".ToUpper(), "b16".ToUpper() }));
 
             test = (HashSet<string>)ss.SetContentsOfCell("a20", "7");
             Assert.AreEqual(3, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20", "Lib89", "b16" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20".ToUpper(), "Lib89".ToUpper(), "b16".ToUpper() }));
 
             return ss;
         }
@@ -237,10 +237,10 @@ namespace SpreadsheetTests
         {
             Spreadsheet ss = SCCFStart();
             string f = ss.GetCellContents("Lib89").ToString();
-            Assert.AreEqual("=a20 - b16 + (876 * b16) / 7".ToString(), f.ToString());
+            Assert.AreEqual(NormalizeFormulaString("=a20 - b16 + (876 * b16) / 7"), f.ToString());
             HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("a20", "let's begin");
             Assert.AreEqual(3, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20", "Lib89", "b16" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "a20".ToUpper(), "Lib89".ToUpper(), "b16".ToUpper() }));
 
             f = "=AD19 * 2";
             ss.SetContentsOfCell("b16", f);
@@ -248,7 +248,7 @@ namespace SpreadsheetTests
             ss.SetContentsOfCell("AD19", f);
             test = (HashSet<string>)ss.SetContentsOfCell("a20", "doesn't even matter");
             Assert.AreEqual(4, test.Count);
-            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89", "b16", "AD19", "a20" }));
+            Assert.IsTrue(test.SetEquals(new HashSet<string> { "Lib89".ToUpper(), "b16".ToUpper(), "AD19".ToUpper(), "a20".ToUpper() }));
 
             f = "=b16 + 1";
             ss.SetContentsOfCell("Pd5", f);
@@ -258,7 +258,7 @@ namespace SpreadsheetTests
             Assert.AreEqual(6, test.Count);
             Assert.IsTrue(test.SetEquals(new HashSet<string>
             {
-                "Lib89", "a20", "b16", "AD19", "Pd5", "jk101"
+                "Lib89".ToUpper(), "a20".ToUpper(), "b16".ToUpper(), "AD19".ToUpper(), "Pd5".ToUpper(), "jk101".ToUpper()
             }));
 
             f = "=jk101 - 1";
@@ -274,7 +274,7 @@ namespace SpreadsheetTests
             Assert.AreEqual(9, test.Count);
             Assert.IsTrue(test.SetEquals(new HashSet<string>
             {
-                "Lib89", "a20", "b16", "AD19", "Pd5", "jk101", "Next1", "Next2", "Next3"
+                "Lib89".ToUpper(), "a20".ToUpper(), "b16".ToUpper(), "AD19".ToUpper(), "Pd5".ToUpper(), "jk101".ToUpper(), "Next1".ToUpper(), "Next2".ToUpper(), "Next3".ToUpper()
             }));
 
             test = (HashSet<string>)ss.SetContentsOfCell("Next3", "whocares");
@@ -322,7 +322,7 @@ namespace SpreadsheetTests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidNameException))]
+        [ExpectedException(typeof(FormulaFormatException))]
         public void SCCFInvalidName()
         {
             Spreadsheet ss = new Spreadsheet();
@@ -354,6 +354,15 @@ namespace SpreadsheetTests
                 result.Add(s);
             }
             return result;
+        }
+
+        /// <summary>
+        /// Helper method converts a formula string to the normalized form achieved through
+        /// Spreadsheet.SetContentsOfCell and Formula.ToString().
+        /// </summary>
+        public string NormalizeFormulaString(string formulaString)
+        {
+            return new Formula(formulaString.Remove(0, 1), s => s.ToUpper(), s => true).ToString();
         }
 
         /// <summary>
