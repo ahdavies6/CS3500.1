@@ -270,10 +270,6 @@ namespace Formulas
                 }
                 else if (MatchThese(token, pNumber))
                 {
-                    //if (!Double.TryParse(token, out double val))
-                    //{
-                    //    throw new FormulaEvaluationException("Invalid token: " + token);
-                    //}
                     double val = double.Parse(token);
 
                     if (oStack.Count > 0)

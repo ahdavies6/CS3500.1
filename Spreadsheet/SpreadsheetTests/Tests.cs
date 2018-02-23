@@ -384,7 +384,39 @@ namespace SpreadsheetTests
 
         #region PS6
 
+        [TestMethod]
+        public void LookupDouble()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("a1", "4");
+            Assert.AreEqual(4, ss.GetCellContents("a1"));
+            Assert.AreEqual(4, ss.GetCellContents("a1"));
+            ss.SetContentsOfCell("a1", "4");
+            ss.SetContentsOfCell("a1", "4");
+        }
 
+        [TestMethod]
+        public void LookupString()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("a1", "adam");
+            Assert.AreEqual("adam", ss.GetCellContents("a1"));
+            Assert.AreEqual("adam", ss.GetCellContents("a1"));
+        }
+
+        [TestMethod]
+        public void LookupFormulaNoVars()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("a1", "=4");
+            Assert.AreEqual(4, ss.GetCellContents("a1"));
+            Assert.AreEqual(4, ss.GetCellContents("a1"));
+        }
+
+        // lookup formula with one var
+        // lookup formula with multiple vars on one level
+        // lookup formula with nested vars
+        // lookup formula with var stress test
 
         #endregion
     }

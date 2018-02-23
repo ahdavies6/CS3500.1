@@ -532,10 +532,10 @@ namespace SS
         /// or Formula. However, this constructor still calls SetContent to make sure the object
         /// parameter is always an allowable type.
         /// </summary>
-        public Cell(object content)
+        public Cell(object content, Formula.Lookup lookup)
         {
             SetContent(content);
-            //Evaluate(cells);
+            Evaluate(lookup);
         }
 
         /// <summary>
@@ -574,7 +574,7 @@ namespace SS
         /// variable or on a division by zero, its value is a FormulaError.  Otherwise, its value
         /// is a double, as specified in Formula.Evaluate.
         /// </summary>
-        public void Evaluate(ref CellContainer cells)
+        public void Evaluate(Formula.Lookup lookup)
         {
             if (!(_contents is Formula)) // _contents is string or double
             {
@@ -582,14 +582,11 @@ namespace SS
             }
             else //_contents is Formula
             {
+                // todo: fix this
                 Formula temp = (Formula)_contents;
-                double temp2 = temp.Evaluate(Temp);
+                double temp2 = temp.Evaluate(lookup);
+                _value = temp2;
             }
-        }
-
-        private double Temp(string s)
-        {
-            return 0;
         }
     }
 
@@ -644,7 +641,7 @@ namespace SS
             }
             else
             {
-                cells[name] = new Cell(content);
+                cells[name] = new Cell(content, TryLookup);
             }
         }
 
@@ -665,7 +662,7 @@ namespace SS
                 }
                 else
                 {
-                    cells[name] = new Cell(content);
+                    cells[name] = new Cell(content, TryLookup);
                 }
             }
         }
@@ -681,7 +678,7 @@ namespace SS
             }
             else
             {
-                cells[name] = new Cell(content);
+                cells[name] = new Cell(content, TryLookup);
             }
         }
 
@@ -690,7 +687,7 @@ namespace SS
         /// </summary>
         public void ReevaluateCell(string name)
         {
-            //cells[name].Evaluate();
+            cells[name].Evaluate(TryLookup);
         }
 
         /// <summary>
@@ -731,19 +728,23 @@ namespace SS
         /// Returns the value of cell (name), if (name).Value is of type double.
         /// 
         /// If cell (name) isn't in cells yet, returns default content "".
-        /// 
-        /// If cell (name) is not of type double, returns FormulaError.
         /// </summary>
         public double TryLookup(string name)
         {
-            if (cells.ContainsKey(name))
+            if (!cells.ContainsKey(name))
             {
-                return (double)cells[name].Value;
+                throw new UndefinedVariableException(name);
             }
-            else
+
+            var cellValue = cells[name].Value;
+
+            if (cellValue is double)
             {
-                return 0;
+                return (double)cellValue;
             }
+
+            // todo: delete this asap
+            return 0;
         }
 
         /// <summary>
