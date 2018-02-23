@@ -54,7 +54,6 @@ namespace SpreadsheetTests
 
             Assert.AreEqual((double)19, ss.GetCellContents("pNzlefEEKN942".ToUpper()));
             Assert.AreEqual("who knows what this will be?", ss.GetCellContents("zYLd419".ToUpper()));
-            // todo: figure out why this one doesn't work without the .ToString()s
             Assert.AreEqual(NormalizeFormulaString(f), ss.GetCellContents("inFEWNnnk107".ToUpper()).ToString());
         }
 
