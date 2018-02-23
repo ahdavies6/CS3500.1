@@ -149,7 +149,7 @@ namespace SS
                 throw new InvalidNameException();
             }
         }
-
+        
         /// <summary>
         /// If text is null, throws an ArgumentNullException.
         /// 
