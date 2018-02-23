@@ -167,6 +167,7 @@ namespace SS
         public override void Save(TextWriter dest)
         {
             // todo: implement me
+            Changed = false;
         }
 
         /// <summary>
@@ -203,15 +204,13 @@ namespace SS
         /// </summary>
         public override object GetCellContents(string name)
         {
-            if (IsValidCellName(name))
-            {
-                name = name.ToUpper();
-                return cells.GetCellContents(name);
-            }
-            else
+            if (!IsValidCellName(name))
             {
                 throw new InvalidNameException();
             }
+
+            name = name.ToUpper();
+            return cells.GetCellContents(name);
         }
 
         /// <summary>
@@ -224,7 +223,14 @@ namespace SS
         {
             // todo: implement me
             // todo: READ "Implementation Considerations" ON PS6 PAGE (canvas)
-            return new object();
+
+            if (!IsValidCellName(name))
+            {
+                throw new InvalidNameException();
+            }
+
+            name = name.ToUpper();
+            return cells.GetCellValue(name);
         }
 
         /// <summary>
@@ -269,7 +275,7 @@ namespace SS
             {
                 throw new InvalidNameException();
             }
-
+            
             name = name.ToUpper();
             HashSet<string> result = new HashSet<string>();
 
@@ -302,6 +308,13 @@ namespace SS
             else
             {
                 result = (HashSet<string>)SetCellContents(name, content);
+            }
+
+            Changed = true;
+
+            foreach (string cellName in GetCellsToRecalculate(name))
+            {
+                cells.ReevaluateCell(cellName);
             }
 
             return result;
@@ -472,35 +485,68 @@ namespace SS
     internal class Cell
     {
         /// <summary>
-        /// The cell's content. Initialized in constructor.
+        /// The cell's content, which is initialized in constructor, but may be indirectly modified
+        /// by CellContainer.SetCellContent.
         /// 
         /// The contents of a cell can be (1) a string, (2) a double, or (3) a Formula.  If the
         /// contents is an empty string, we say that the cell is empty.
         /// 
-        /// Note: set calls SetContent to make sure the dynamic parameter is always an allowable type.
+        /// Note: set calls SetContent to make sure the object parameter is always an allowable type.
         /// </summary>
-        public dynamic Contents
+        public object Contents
         {
             get { return _contents; }
             set { SetContent(value); }
         }
-        private dynamic _contents;
+        private object _contents;
+
+        /// <summary>
+        /// The cell's value, which is initially evaluated at construction, but may be indirectly
+        /// re-evaluated by CellContainer.ReevaluateCell.
+        /// 
+        /// The value of a cell can be (1) a string, (2) a double, or (3) a FormulaError.  
+        /// (By analogy, the value of an Excel cell is what is displayed in that cell's position
+        /// in the grid.)
+        /// 
+        /// If a cell's contents is a string, its value is that string.
+        /// 
+        /// If a cell's contents is a double, its value is that double.
+        /// 
+        /// If a cell's contents is a Formula, its value is either a double or a FormulaError.
+        /// The value of a Formula, of course, can depend on the values of variables.  The value 
+        /// of a Formula variable is the value of the spreadsheet cell it names (if that cell's 
+        /// value is a double) or is undefined (otherwise).  If a Formula depends on an undefined
+        /// variable or on a division by zero, its value is a FormulaError.  Otherwise, its value
+        /// is a double, as specified in Formula.Evaluate.
+        /// </summary>
+        public object Value
+        {
+            get { return _value; }
+        }
+        private object _value;
 
         /// <summary>
         /// Initializes this cell, which will be named (name) and contain content (content).
         /// 
         /// Note: content will necessarily, by virtue of SetCellContents, be of type string, double,
-        /// or Formula. However, this constructor still calls SetContent to make sure the dynamic
+        /// or Formula. However, this constructor still calls SetContent to make sure the object
         /// parameter is always an allowable type.
         /// </summary>
-        public Cell(dynamic content)
+        public Cell(object content)
         {
             SetContent(content);
+            //Evaluate(cells);
         }
 
-        private void SetContent(dynamic content)
+        /// <summary>
+        /// Helper method for Contents.Set sets _content to (content).
+        /// 
+        /// The contents of a cell can be (1) a string, (2) a double, or (3) a Formula.  If the
+        /// contents is an empty string, we say that the cell is empty.
+        /// </summary>
+        private void SetContent(object content)
         {
-            if (content is double || content is string || content is Formula)
+            if (content is string || content is double || content is Formula)
             {
                 _contents = content;
             }
@@ -508,6 +554,42 @@ namespace SS
             {
                 throw new ArgumentOutOfRangeException();
             }
+        }
+
+        /// <summary>
+        /// Helper method that evaluates the cell's _value, given its content.
+        /// 
+        /// The value of a cell can be (1) a string, (2) a double, or (3) a FormulaError.  
+        /// (By analogy, the value of an Excel cell is what is displayed in that cell's position
+        /// in the grid.)
+        /// 
+        /// If a cell's contents is a string, its value is that string.
+        /// 
+        /// If a cell's contents is a double, its value is that double.
+        /// 
+        /// If a cell's contents is a Formula, its value is either a double or a FormulaError.
+        /// The value of a Formula, of course, can depend on the values of variables.  The value 
+        /// of a Formula variable is the value of the spreadsheet cell it names (if that cell's 
+        /// value is a double) or is undefined (otherwise).  If a Formula depends on an undefined
+        /// variable or on a division by zero, its value is a FormulaError.  Otherwise, its value
+        /// is a double, as specified in Formula.Evaluate.
+        /// </summary>
+        public void Evaluate(ref CellContainer cells)
+        {
+            if (!(_contents is Formula)) // _contents is string or double
+            {
+                _value = _contents;
+            }
+            else //_contents is Formula
+            {
+                Formula temp = (Formula)_contents;
+                double temp2 = temp.Evaluate(Temp);
+            }
+        }
+
+        private double Temp(string s)
+        {
+            return 0;
         }
     }
 
@@ -539,7 +621,7 @@ namespace SS
         /// This is a wrapper method which will call the correct SetCellContents, given the type
         /// of content.
         /// </summary>
-        public void SetCellContents(string name, dynamic content)
+        public void SetCellContents(string name, object content)
         {
             if (content is double || content is string || content is Formula)
             {
@@ -604,25 +686,63 @@ namespace SS
         }
 
         /// <summary>
-        /// Returns the content of cell (name). If cell (name) isn't in cells yet, returns default
-        /// value "".
+        /// Reevaluates cell (name) whose value may have changed.
+        /// </summary>
+        public void ReevaluateCell(string name)
+        {
+            //cells[name].Evaluate();
+        }
+
+        /// <summary>
+        /// Returns the content of cell (name).
+        /// 
+        /// If cell (name) isn't in cells yet, returns default value "".
         /// </summary>
         public object GetCellContents(string name)
         {
-            if (name != null)
+            if (cells.ContainsKey(name))
             {
-                if (cells.ContainsKey(name))
-                {
-                    return cells[name].Contents;
-                }
-                else
-                {
-                    return "";
-                }
+                return cells[name].Contents;
             }
             else
             {
-                throw new InvalidNameException();
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// Returns the value of cell (name).
+        /// 
+        /// If cell (name) isn't in cells yet, returns default content "".
+        /// </summary>
+        public object GetCellValue(string name)
+        {
+            if (cells.ContainsKey(name))
+            {
+                return cells[name].Value;
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// Returns the value of cell (name), if (name).Value is of type double.
+        /// 
+        /// If cell (name) isn't in cells yet, returns default content "".
+        /// 
+        /// If cell (name) is not of type double, returns FormulaError.
+        /// </summary>
+        public double TryLookup(string name)
+        {
+            if (cells.ContainsKey(name))
+            {
+                return (double)cells[name].Value;
+            }
+            else
+            {
+                return 0;
             }
         }
 
