@@ -161,7 +161,7 @@ namespace SS
         /// Otherwise, returns the value (as opposed to the contents) of the named cell.  The return
         /// value should be either a string, a double, or a FormulaError.
         /// </summary>
-        public override object GetCellValue(String name)
+        public override object GetCellValue(string name)
         {
             // todo: implement me
             return new object();
@@ -198,10 +198,25 @@ namespace SS
         /// For example, if name is A1, B1 contains A1*2, and C1 contains B1+A1, the
         /// set {A1, B1, C1} is returned.
         /// </summary>
-        public override ISet<String> SetContentsOfCell(String name, String content)
+        public override ISet<String> SetContentsOfCell(string name, string content)
         {
-            // todo: implement me
-            return new HashSet<string>();
+            // todo: check if comment on next line is true (and then remove it)
+            if (IsValidCellName(name)) // probably don't need else, because this method should take care of it
+            {
+                // if content is a number
+                if (Double.TryParse(content, out double number))
+                {
+                    SetCellContents(name, number);
+                }
+
+                // if content is a formula
+                else if (content[0] == '=')
+                {
+                    Formula formula = new Formula(content.Remove(0, 1));
+
+                    SetCellContents(name, )
+                }
+            }
         }
 
         /// <summary>
