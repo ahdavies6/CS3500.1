@@ -88,6 +88,7 @@ namespace SS
             IsValid = isValid;
             cells = new CellContainer();
             dependencies = new DependencyGraph();
+            Changed = false;
         }
 
         /// <summary>
@@ -318,16 +319,8 @@ namespace SS
         /// </summary>
         protected override ISet<string> SetCellContents(string name, double number)
         {
-            if (IsValidCellName(name))
-            {
-                cells.SetCellContents(name, number);
-
-                return GetAllDependents(name);
-            }
-            else
-            {
-                throw new InvalidNameException();
-            }
+            cells.SetCellContents(name, number);
+            return GetAllDependents(name);
         }
         
         /// <summary>
@@ -344,23 +337,8 @@ namespace SS
         /// </summary>
         protected override ISet<string> SetCellContents(string name, string text)
         {
-            if (text != null)
-            {
-                if (IsValidCellName(name))
-                {
-                    cells.SetCellContents(name, text);
-
-                    return GetAllDependents(name);
-                }
-                else
-                {
-                    throw new InvalidNameException();
-                }
-            }
-            else
-            {
-                throw new ArgumentNullException();
-            }
+            cells.SetCellContents(name, text);
+            return GetAllDependents(name);
         }
 
         /// <summary>
@@ -381,6 +359,7 @@ namespace SS
         protected override ISet<string> SetCellContents(string name, Formula formula)
         {
             HashSet<string> vars = (HashSet<string>)formula.GetVariables();
+
             foreach (string variable in vars)
             {
                 if (!IsValidCellName(variable))
@@ -389,18 +368,10 @@ namespace SS
                 }
             }
 
-            if (IsValidCellName(name))
-            {
-                dependencies.ReplaceDependees(name, vars);
-                HashSet<string> result = (HashSet<string>)GetAllDependents(name);
-
-                cells.SetCellContents(name, formula);
-                return result;
-            }
-            else
-            {
-                throw new InvalidNameException();
-            }
+            dependencies.ReplaceDependees(name, vars);
+            HashSet<string> result = (HashSet<string>)GetAllDependents(name);
+            cells.SetCellContents(name, formula);
+            return result;
         }
 
         /// <summary>
