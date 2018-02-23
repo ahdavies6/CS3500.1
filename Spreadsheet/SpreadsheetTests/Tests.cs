@@ -4,6 +4,7 @@ using SS;
 using Dependencies;
 using Formulas;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace SpreadsheetTests
 {

@@ -186,7 +186,7 @@ namespace SS
         {
             if (name != null)
             {
-                return Regex.IsMatch(name, validCellNamePattern);
+                return Regex.IsMatch(name.ToUpper(), validCellNamePattern) && IsValid.IsMatch(name);
             }
             else
             {
@@ -269,8 +269,8 @@ namespace SS
                 throw new InvalidNameException();
             }
 
-            HashSet<string> result = new HashSet<string>();
             name = name.ToUpper();
+            HashSet<string> result = new HashSet<string>();
 
             if (content.Length > 0)
             {
