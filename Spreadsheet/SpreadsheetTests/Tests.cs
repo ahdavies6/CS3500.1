@@ -5,6 +5,7 @@ using Dependencies;
 using Formulas;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace SpreadsheetTests
 {
@@ -384,39 +385,330 @@ namespace SpreadsheetTests
 
         #region PS6
 
+        #region SetContentsOfCell and GetCellValue Tests
+
         [TestMethod]
-        public void LookupDouble()
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void SetContentNull()
         {
             Spreadsheet ss = new Spreadsheet();
-            ss.SetContentsOfCell("a1", "4");
-            Assert.AreEqual(4, ss.GetCellContents("a1"));
-            Assert.AreEqual(4, ss.GetCellContents("a1"));
-            ss.SetContentsOfCell("a1", "4");
-            ss.SetContentsOfCell("a1", "4");
+            ss.SetContentsOfCell("A2", null);
         }
 
         [TestMethod]
-        public void LookupString()
+        [ExpectedException(typeof(InvalidNameException))]
+        public void SetNameNull()
         {
             Spreadsheet ss = new Spreadsheet();
-            ss.SetContentsOfCell("a1", "adam");
-            Assert.AreEqual("adam", ss.GetCellContents("a1"));
-            Assert.AreEqual("adam", ss.GetCellContents("a1"));
+            ss.SetContentsOfCell(null, "5");
         }
 
         [TestMethod]
-        public void LookupFormulaNoVars()
+        [ExpectedException(typeof(InvalidNameException))]
+        public void SetNameInvalid1()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("A", "2");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidNameException))]
+        public void SetNameInvalid2()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("A0", "1");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidNameException))]
+        public void SetNameInvalid3()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("A2!", "=A1");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidNameException))]
+        public void SetNameInvalid4()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell(" A2", "octopus");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidNameException))]
+        public void SetNameRegexInvalid1()
+        {
+            Spreadsheet ss = new Spreadsheet(new Regex(".{3,}"));
+            ss.SetContentsOfCell("A2", "=b4");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidNameException))]
+        public void SetNameRegexInvalid2()
+        {
+            Spreadsheet ss = new Spreadsheet(new Regex("^B"));
+            ss.SetContentsOfCell("AB2", "72");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidNameException))]
+        public void SetNameRegexInvalid3()
+        {
+            Spreadsheet ss = new Spreadsheet(new Regex("[cde]{,2}"));
+            ss.SetContentsOfCell("deck1", "a");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void FormulaFormat1()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("A1", "=b7+");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void FormulaFormat2()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("b11", "=11 * 3 4");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void FormulaFormat3()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("jk101", "=(4 * a) / b)");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(CircularException))]
+        public void Circular1()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("jk101", "=JK101");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(CircularException))]
+        public void Circular2()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("jk101", "=s8");
+            ss.SetContentsOfCell("s8", "=jk101");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(CircularException))]
+        public void Circular3()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("jk101", "=s8");
+            ss.SetContentsOfCell("s8", "=s7");
+            ss.SetContentsOfCell("s8", "=s9");
+            ss.SetContentsOfCell("s9", "=s6");
+            ss.SetContentsOfCell("s6", "=jk101");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(CircularException))]
+        public void Circular4()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("a1", "=a2 + a3");
+            ss.SetContentsOfCell("a2", "=a4 + a5");
+            ss.SetContentsOfCell("a3", "=a6 + a7");
+            ss.SetContentsOfCell("a4", "=a2 + a8");
+        }
+
+        [TestMethod]
+        public void CircularCatch()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("a1", "=a2 + a3");
+            ss.SetContentsOfCell("a2", "=a4 + a5");
+            ss.SetContentsOfCell("a3", "=a6 + a7");
+            try
+            {
+                ss.SetContentsOfCell("a4", "=a2 + a8");
+            }
+            catch (CircularException)
+            {
+                ss.SetContentsOfCell("a2", "=0");
+            }
+            ss.SetContentsOfCell("a4", "a2");
+        }
+
+        [TestMethod]
+        public void GetValueDouble()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("a1", "4");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1" }));
+            Assert.IsTrue(ObjectsAreEqual(4, ss.GetCellValue("a1")));
+            ss.SetContentsOfCell("A1", "60.0");
+            Assert.IsTrue(ObjectsAreEqual(60, ss.GetCellValue("a1")));
+            ss.SetContentsOfCell("a1", "42");
+            Assert.IsTrue(ObjectsAreEqual(42.0, ss.GetCellValue("A1")));
+        }
+
+        [TestMethod]
+        public void GetValueString()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("a1", "b");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1" }));
+            Assert.IsTrue(ObjectsAreEqual("b", ss.GetCellValue("a1")));
+        }
+
+        [TestMethod]
+        public void GetValueFormulaSimple()
         {
             Spreadsheet ss = new Spreadsheet();
             ss.SetContentsOfCell("a1", "=4");
-            Assert.AreEqual(4, ss.GetCellContents("a1"));
-            Assert.AreEqual(4, ss.GetCellContents("a1"));
+            Assert.IsTrue(ObjectsAreEqual(4, ss.GetCellValue("a1")));
+            HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("a2", "=A1");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A2" }));
+            test = (HashSet<string>)ss.SetContentsOfCell("a1", "=0");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A2", "A1" }));
+            Assert.IsTrue(ObjectsAreEqual(0, ss.GetCellValue("a2")));
+            Assert.IsTrue(ObjectsAreEqual(ss.GetCellValue("a1"), ss.GetCellValue("a2")));
         }
 
-        // lookup formula with one var
-        // lookup formula with multiple vars on one level
-        // lookup formula with nested vars
-        // lookup formula with var stress test
+        [TestMethod]
+        public void GetValueFormulaComplex()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            Assert.IsTrue(ObjectsAreEqual("", ss.GetCellValue("a1")));
+            Assert.IsTrue(ObjectsAreEqual(ss.GetCellValue("a200"), ss.GetCellValue("d11")));
+            ss.SetContentsOfCell("A1", "=b1");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("a1")));
+            ss.SetContentsOfCell("B1", "6");
+            Assert.IsTrue(ObjectsAreEqual(6, ss.GetCellValue("a1")));
+            ss.SetContentsOfCell("b1", "e");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("b1", "70.0");
+            Assert.IsTrue(ObjectsAreEqual(70, ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("b1", "=c2");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("b1", "");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("a1", "done");
+            Assert.IsTrue(ObjectsAreEqual("done", ss.GetCellValue("A1")));
+
+            ss = new Spreadsheet();
+            ss.SetContentsOfCell("a1", "=6/z9");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("z9", "2");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9" }));
+            Assert.IsTrue(ObjectsAreEqual(3, ss.GetCellValue("A1")));
+
+            ss.SetContentsOfCell("z9", "0");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("z9", "=c4");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            test = (HashSet<string>)ss.SetContentsOfCell("c4", "3");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4" }));
+            Assert.IsTrue(ObjectsAreEqual(2, ss.GetCellValue("A1")));
+
+            ss.SetContentsOfCell("c4", "0");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("c4", "=e11");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            test = (HashSet<string>)ss.SetContentsOfCell("e11", "=p62");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11" }));
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+
+            test = (HashSet<string>)ss.SetContentsOfCell("p62", "6");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11", "P62" }));
+            Assert.IsTrue(ObjectsAreEqual(1, ss.GetCellValue("A1")));
+
+            ss.SetContentsOfCell("p62", "= p60 - p61");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            test = (HashSet<string>)ss.SetContentsOfCell("p60", "0");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11", "P62", "P60" }));
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+
+            test = (HashSet<string>)ss.SetContentsOfCell("p61", "1");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11", "P62", "P61" }));
+            Assert.IsTrue(ObjectsAreEqual(-6, ss.GetCellValue("A1")));
+
+            ss.SetContentsOfCell("p62", "= p60 - p61 + 1");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+
+            ss.SetContentsOfCell("a1", "=c4");
+            test = (HashSet<string>)ss.SetContentsOfCell("c4", "");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "C4" }));
+
+            test = (HashSet<string>)ss.SetContentsOfCell("e11", "");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "E11" }));
+        }
+
+        /// <summary>
+        /// Helper method checks if (expected) and (actual) are, after proper casting, equivalent.
+        /// </summary>
+        public bool ObjectsAreEqual(object expected, object actual)
+        {
+            if (expected is FormulaError || actual is FormulaError)
+            {
+                return expected.Equals(actual) && expected is FormulaError && actual is FormulaError;
+            }
+            else
+            {
+                return TryCast(expected) == TryCast(actual);
+            }
+        }
+
+        /// <summary>
+        /// Helper method attempts to return a cast of an (o) to double, string, Formula, and FormulaError.
+        /// </summary>
+        public dynamic TryCast(object o)
+        {
+            try
+            {
+                return (FormulaError)o;
+            }
+            catch (Exception e)
+            {
+                if (!(e is InvalidCastException || e is FormatException))
+                {
+                    throw e;
+                }
+                try
+                {
+                    return (Formula)o;
+                }
+                catch
+                {
+                    if (!(e is InvalidCastException || e is FormatException))
+                    {
+                        throw e;
+                    }
+                    try
+                    {
+                        return Convert.ToDouble(o);
+                    }
+                    catch
+                    {
+                        if (!(e is InvalidCastException || e is FormatException))
+                        {
+                            throw e;
+                        }
+                        return Convert.ToString(o);
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region Next
+
+
+
+        #endregion
 
         #endregion
     }

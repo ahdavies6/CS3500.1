@@ -1,0 +1,1 @@
+<Playlist Version="1.0"><Add Test="SpreadsheetTests.Tests.GetValueFormulaMultiple" /><Add Test="SpreadsheetTests.Tests.GetValueFormulaSimple" /><Add Test="SpreadsheetTests.Tests.GetValueString" /><Add Test="SpreadsheetTests.Tests.GetValueFormulaError" /><Add Test="SpreadsheetTests.Tests.GetValueDouble" /></Playlist>

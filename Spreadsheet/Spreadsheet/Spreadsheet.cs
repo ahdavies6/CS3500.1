@@ -73,7 +73,6 @@ namespace SS
         /// </summary>
         private Regex IsValid;
 
-        // todo: finish
         /// <summary>
         /// True if this spreadsheet has been modified since it was created or saved
         /// (whichever happened most recently); false otherwise.
@@ -221,9 +220,6 @@ namespace SS
         /// </summary>
         public override object GetCellValue(string name)
         {
-            // todo: implement me
-            // todo: READ "Implementation Considerations" ON PS6 PAGE (canvas)
-
             if (!IsValidCellName(name))
             {
                 throw new InvalidNameException();
@@ -307,6 +303,7 @@ namespace SS
             // note: calling SetCellContents with (content) of "" removes cell (name) from cells
             else
             {
+                dependencies.ReplaceDependents(name, new HashSet<string>());
                 result = (HashSet<string>)SetCellContents(name, content);
             }
 
@@ -410,6 +407,20 @@ namespace SS
         }
 
         /// <summary>
+        /// Returns an ISet containing all dependents of cell (name), including cell (name).
+        /// </summary>
+        private ISet<string> GetAllDependents(string name)
+        {
+            // GetCellsToRecalculate will throw a CircularException if result contains
+            // a circular dependency.
+            GetCellsToRecalculate(name);
+
+            HashSet<string> direct = GetHashSetOfDirectDependents(name);
+            direct.Add(name);
+            return GetIndirectDependents(direct);
+        }
+
+        /// <summary>
         /// Helper method finds the names of all direct dependents of string (start), then adds
         /// them to a HashSet, which is returned.
         /// 
@@ -449,19 +460,199 @@ namespace SS
             }
             return allIndirectDependents;
         }
+    }
+
+    /// <summary>
+    /// Contains all cells in a spreadsheet. Built to fulfull the specification that "a spreadsheet
+    /// contains a unique cell corresponding to each possible cell name", which is, naturally,
+    /// computationally impossible with direct representation; thus, I will abstract one level
+    /// of representation to fulfill that specification as well as is possible computationally.
+    /// </summary>
+    internal class CellContainer
+    {
+        /// <summary>
+        /// A dictionary containing all of the CellContainer's (and thus, the Spreadsheet's)
+        /// Cells. Its keys are indexed by a string with each Cell's name.
+        /// </summary>
+        private Dictionary<string, Cell> cells;
         
         /// <summary>
-        /// Returns an ISet containing all dependents of cell (name), including cell (name).
+        /// Initializes an empty CellContainer.
         /// </summary>
-        private ISet<string> GetAllDependents(string name)
+        public CellContainer()
         {
-            // GetCellsToRecalculate will throw a CircularException if result contains
-            // a circular dependency.
-            GetCellsToRecalculate(name);
+            cells = new Dictionary<string, Cell>();
+        }
 
-            HashSet<string> direct = GetHashSetOfDirectDependents(name);
-            direct.Add(name);
-            return GetIndirectDependents(direct);
+        /// <summary>
+        /// Creates a new cell in cells with name (name) and content (content).
+        /// 
+        /// This is a wrapper method which will call the correct SetCellContents, given the type
+        /// of content.
+        /// </summary>
+        public void SetCellContents(string name, object content)
+        {
+            if (content is double || content is string || content is Formula)
+            {
+                if (content is double)
+                {
+                    SetCellContents(name, (double)content);
+                }
+                else if (content is string)
+                {
+                    SetCellContents(name, (string)content);
+                }
+                else // content is Formula
+                {
+                    SetCellContents(name, (Formula)content);
+                }
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        /// <summary>
+        /// Creates a new cell in cells with name (name) and content of double (content).
+        /// </summary>
+        private void SetCellContents(string name, double content)
+        {
+            if (cells.ContainsKey(name))
+            {
+                cells[name].Contents = content;
+            }
+            else
+            {
+                cells[name] = new Cell(content, TryLookup);
+            }
+        }
+
+        /// <summary>
+        /// Creates a new cell in cells with name (name) and content of string (content).
+        /// </summary>
+        private void SetCellContents(string name, string content)
+        {
+            if (content == "")
+            {
+                cells.Remove(name);
+            }
+            else
+            {
+                if (cells.ContainsKey(name))
+                {
+                    cells[name].Contents = content;
+                }
+                else
+                {
+                    cells[name] = new Cell(content, TryLookup);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates a new cell in cells with name (name) and content of Formula (content).
+        /// </summary>
+        private void SetCellContents(string name, Formula content)
+        {
+            if (cells.ContainsKey(name))
+            {
+                cells[name].Contents = content;
+            }
+            else
+            {
+                cells[name] = new Cell(content, TryLookup);
+            }
+        }
+
+        /// <summary>
+        /// Reevaluates cell (name) whose value may have changed.
+        /// </summary>
+        public void ReevaluateCell(string name)
+        {
+            if (cells.ContainsKey(name))
+            {
+                cells[name].Evaluate(TryLookup);
+            }
+        }
+
+        /// <summary>
+        /// Returns the content of cell (name).
+        /// 
+        /// If cell (name) isn't in cells yet, returns default value "".
+        /// </summary>
+        public object GetCellContents(string name)
+        {
+            if (cells.ContainsKey(name))
+            {
+                return cells[name].Contents;
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// Returns the value of cell (name).
+        /// 
+        /// If cell (name) isn't in cells yet, returns default content "".
+        /// </summary>
+        public object GetCellValue(string name)
+        {
+            if (cells.ContainsKey(name))
+            {
+                return cells[name].Value;
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// Returns the value of cell (name), if (name).Value is of type double.
+        /// 
+        /// If cell (name) is not in cells, or if its value is not a double, throws an UndefinedVariableException.
+        /// </summary>
+        public double TryLookup(string name)
+        {
+            if (!cells.ContainsKey(name))
+            {
+                throw new UndefinedVariableException(name);
+            }
+            else
+            {
+                if (cells[name].Value is double)
+                {
+                    return (double)cells[name].Value;
+                }
+            }
+
+            throw new UndefinedVariableException(name);
+        }
+
+        /// <summary>
+        /// Retrieves the name of all (non-empty) Cells in the Cellcontainer.
+        /// Actually returns all Cells, because non-empty cells are only abstractly represented,
+        /// and not actually contained.
+        /// </summary>
+        public IEnumerable<string> GetNamesOfAllNonemptyCells()
+        {
+            foreach (string s in cells.Keys)
+            {
+                if (cells[s].Contents.GetType() == typeof(string))
+                {
+                    if (cells[s].Contents != "")
+                    {
+                        yield return s;
+                    }
+                }
+                else
+                {
+                    yield return s;
+                }
+            }
         }
     }
 
@@ -576,197 +767,24 @@ namespace SS
         /// </summary>
         public void Evaluate(Formula.Lookup lookup)
         {
-            if (!(_contents is Formula)) // _contents is string or double
+            if (_contents is Formula)
+            {
+                // todo: make this look nicer
+                Formula temp = (Formula)_contents;
+                try
+                {
+                    double temp2 = temp.Evaluate(lookup);
+                    _value = temp2;
+                }
+                catch (FormulaEvaluationException)
+                {
+                    // todo: give reason?
+                    _value = new FormulaError();
+                }
+            }
+            else //_contents is string or double
             {
                 _value = _contents;
-            }
-            else //_contents is Formula
-            {
-                // todo: fix this
-                Formula temp = (Formula)_contents;
-                double temp2 = temp.Evaluate(lookup);
-                _value = temp2;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Contains all cells in a spreadsheet. Built to fulfull the specification that "a spreadsheet
-    /// contains a unique cell corresponding to each possible cell name", which is, naturally,
-    /// computationally impossible with direct representation; thus, I will abstract one level
-    /// of representation to fulfill that specification as well as is possible computationally.
-    /// </summary>
-    internal class CellContainer
-    {
-        /// <summary>
-        /// A dictionary containing all of the CellContainer's (and thus, the Spreadsheet's)
-        /// Cells. Its keys are indexed by a string with each Cell's name.
-        /// </summary>
-        private Dictionary<string, Cell> cells;
-        
-        /// <summary>
-        /// Initializes an empty CellContainer.
-        /// </summary>
-        public CellContainer()
-        {
-            cells = new Dictionary<string, Cell>();
-        }
-
-        /// <summary>
-        /// Creates a new cell in cells with name (name) and content (content).
-        /// 
-        /// This is a wrapper method which will call the correct SetCellContents, given the type
-        /// of content.
-        /// </summary>
-        public void SetCellContents(string name, object content)
-        {
-            if (content is double || content is string || content is Formula)
-            {
-                SetCellContents(name, content);
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        /// <summary>
-        /// Creates a new cell in cells with name (name) and content of double (content).
-        /// </summary>
-        private void SetCellContents(string name, double content)
-        {
-            if (cells.ContainsKey(name))
-            {
-                cells[name].Contents = content;
-            }
-            else
-            {
-                cells[name] = new Cell(content, TryLookup);
-            }
-        }
-
-        /// <summary>
-        /// Creates a new cell in cells with name (name) and content of string (content).
-        /// </summary>
-        private void SetCellContents(string name, string content)
-        {
-            if (content == "")
-            {
-                cells.Remove(name);
-            }
-            else
-            {
-                if (cells.ContainsKey(name))
-                {
-                    cells[name].Contents = content;
-                }
-                else
-                {
-                    cells[name] = new Cell(content, TryLookup);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Creates a new cell in cells with name (name) and content of Formula (content).
-        /// </summary>
-        private void SetCellContents(string name, Formula content)
-        {
-            if (cells.ContainsKey(name))
-            {
-                cells[name].Contents = content;
-            }
-            else
-            {
-                cells[name] = new Cell(content, TryLookup);
-            }
-        }
-
-        /// <summary>
-        /// Reevaluates cell (name) whose value may have changed.
-        /// </summary>
-        public void ReevaluateCell(string name)
-        {
-            cells[name].Evaluate(TryLookup);
-        }
-
-        /// <summary>
-        /// Returns the content of cell (name).
-        /// 
-        /// If cell (name) isn't in cells yet, returns default value "".
-        /// </summary>
-        public object GetCellContents(string name)
-        {
-            if (cells.ContainsKey(name))
-            {
-                return cells[name].Contents;
-            }
-            else
-            {
-                return "";
-            }
-        }
-
-        /// <summary>
-        /// Returns the value of cell (name).
-        /// 
-        /// If cell (name) isn't in cells yet, returns default content "".
-        /// </summary>
-        public object GetCellValue(string name)
-        {
-            if (cells.ContainsKey(name))
-            {
-                return cells[name].Value;
-            }
-            else
-            {
-                return "";
-            }
-        }
-
-        /// <summary>
-        /// Returns the value of cell (name), if (name).Value is of type double.
-        /// 
-        /// If cell (name) isn't in cells yet, returns default content "".
-        /// </summary>
-        public double TryLookup(string name)
-        {
-            if (!cells.ContainsKey(name))
-            {
-                throw new UndefinedVariableException(name);
-            }
-
-            var cellValue = cells[name].Value;
-
-            if (cellValue is double)
-            {
-                return (double)cellValue;
-            }
-
-            // todo: delete this asap
-            return 0;
-        }
-
-        /// <summary>
-        /// Retrieves the name of all (non-empty) Cells in the Cellcontainer.
-        /// Actually returns all Cells, because non-empty cells are only abstractly represented,
-        /// and not actually contained.
-        /// </summary>
-        public IEnumerable<string> GetNamesOfAllNonemptyCells()
-        {
-            foreach (string s in cells.Keys)
-            {
-                if (cells[s].Contents.GetType() == typeof(string))
-                {
-                    if (cells[s].Contents != "")
-                    {
-                        yield return s;
-                    }
-                }
-                else
-                {
-                    yield return s;
-                }
             }
         }
     }
