@@ -1,11 +1,11 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SS;
-using Dependencies;
 using Formulas;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Microsoft.CSharp.RuntimeBinder;
+using System.IO;
+using System.Xml;
 
 namespace SpreadsheetTests
 {
@@ -384,8 +384,8 @@ namespace SpreadsheetTests
 
         #region PS6
 
-        #region SetContentsOfCell and GetCellValue Tests
-
+        #region IsValid, Constructor(Regex), SetContentsOfCell, GetCellValue Tests
+   
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void SetContentNull()
@@ -703,9 +703,29 @@ namespace SpreadsheetTests
 
         #endregion
 
-        #region Next
+        #region Changed, Constructor(TextReader, Regex), Save Tests
 
+        string here = AppDomain.CurrentDomain.BaseDirectory + "test.xml";
 
+        [TestMethod]
+        public void ChangedTest1()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            Assert.IsFalse(ss.Changed);
+            ss.SetContentsOfCell("a1", "0");
+            Assert.IsTrue(ss.Changed);
+        }
+
+        [TestMethod]
+        public void ChangedTest2()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            Assert.IsFalse(ss.Changed);
+            ss.SetContentsOfCell("a1", "0");
+            Assert.IsTrue(ss.Changed);
+            ss.Save(new StreamWriter(here));
+            Assert.IsFalse(ss.Changed);
+        }
 
         #endregion
 
