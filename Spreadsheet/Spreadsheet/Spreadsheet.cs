@@ -60,6 +60,19 @@ namespace SS
         /// </summary>
         private DependencyGraph dependencies;
 
+        /// <summary>
+        /// IsValid is used to determine whether cell names are valid, and
+        /// 
+        /// A string is a valid cell name if and only if (1) s consists of one or more letters, 
+        /// followed by a non-zero digit, followed by zero or more digits AND (2) the C#
+        /// expression IsValid.IsMatch(s.ToUpper()) is true.
+        /// 
+        /// For example, "A15", "a15", "XY32", and "BC7" are valid cell names, so long as they also
+        /// are accepted by IsValid.  On the other hand, "Z", "X07", and "hello" are not valid cell 
+        /// names, regardless of IsValid.
+        /// </summary>
+        private Regex IsValid
+
         // todo: finish
         /// <summary>
         /// True if this spreadsheet has been modified since it was created or saved
@@ -68,14 +81,23 @@ namespace SS
         public override bool Changed { get; protected set; }
 
         /// <summary>
-        /// Constructs an empty Spreadsheet.
+        /// Creates an empty Spreadsheet whose IsValid regular expression is provided as the parameter.
         /// </summary>
-        public Spreadsheet()
+        public Spreadsheet(Regex isValid)
+        {
+
+        }
+
+        /// <summary>
+        /// Creates an empty Spreadsheet whose IsValid regular expression accepts every string.
+        /// </summary>
+        public Spreadsheet() : this(new Regex(".*", RegexOptions.Singleline))
         {
             cells = new CellContainer();
             dependencies = new DependencyGraph();
         }
 
+        // todo: delete me?
         /// <summary>
         /// A Regex pattern that will be used to determine whether a given cell name is valid.
         /// 
@@ -87,6 +109,7 @@ namespace SS
         /// </summary>
         private const string validCellNamePattern = "^[a-zA-Z]+[1-9][0-9]*$";
 
+        // todo: delete me?
         /// <summary>
         /// Helper method that returns whether (name) is a valid cell name.
         /// </summary>
@@ -212,7 +235,7 @@ namespace SS
                 // if content is a formula
                 else if (content[0] == '=')
                 {
-                    Formula formula = new Formula(content.Remove(0, 1));
+                    Formula formula = new Formula(content.Remove(0, 1), s => s.ToUpper(), );
 
                     SetCellContents(name, )
                 }
