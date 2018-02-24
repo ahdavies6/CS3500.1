@@ -384,8 +384,12 @@ namespace SpreadsheetTests
 
         #region PS6
 
+        string here = AppDomain.CurrentDomain.BaseDirectory + "test.xml";
+        string here2 = AppDomain.CurrentDomain.BaseDirectory + "test2.xml";
+        Regex matchAll = new Regex(".*");
+
         #region IsValid, Constructor(Regex), SetContentsOfCell, GetCellValue Tests
-   
+
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void SetContentNull()
@@ -744,9 +748,7 @@ namespace SpreadsheetTests
 
         #endregion
 
-        #region Changed, Constructor(TextReader, Regex), Save Tests
-
-        string here = AppDomain.CurrentDomain.BaseDirectory + "test.xml";
+        #region Changed Tests
 
         [TestMethod]
         public void ChangedTest1()
@@ -768,11 +770,114 @@ namespace SpreadsheetTests
             Assert.IsFalse(ss.Changed);
         }
 
+        #endregion
+
+        #region Constructor(TextReader, Regex) Tests
+
         [TestMethod]
-        public void Save()
+        [ExpectedException(typeof(IOException))]
+        public void IOException()
+        {
+            // problem reading source --> IOEx\
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(SpreadsheetReadException))]
+        public void ReadException1()
+        {
+            // contents source =/= Spreadsheet.xsd --> SSReadEx
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(SpreadsheetReadException))]
+        public void ReadException2()
+        {
+            // IsValid source bad Regex --> ssReadEx (else src IV --> "oldIsValid")
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(SpreadsheetReadException))]
+        public void ReadException3()
+        {
+            // duplicate cell name in src --> SReadEx
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(SpreadsheetReadException))]
+        public void ReadException4()
+        {
+            // invalid cell name/formula src --> SReadEx (use oldIsValid)
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(SpreadsheetReadException))]
+        public void ReadException5()
+        {
+            // circ dependency --> SReadEx
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(SpreadsheetVersionException))]
+        public void VersionException()
+        {
+            // invalid cell name/formula src --> SVerEx (use newIsValid)
+        }
+
+        // todo: positive tests too
+
+        #endregion
+
+        #region Save Tests
+
+        /// <summary>
+        /// Helper method returns a HashSet with all the cell names in Spreadsheet (ss).
+        /// </summary>
+        public HashSet<string> GetToHashSet(Spreadsheet ss)
+        {
+            HashSet<string> result = new HashSet<string>();
+
+            foreach (string s in ss.GetNamesOfAllNonemptyCells())
+            {
+                result.Add(s);
+            }
+
+            return result;
+        }
+
+        [TestMethod]
+        public void SaveEmpty()
         {
             Spreadsheet ss = new Spreadsheet();
+            ss.Save(new StreamWriter(here));
+
+            Spreadsheet ss2 = new Spreadsheet(new StreamReader(here), matchAll);
+            HashSet<string> test1 = GetToHashSet(ss);
+            HashSet<string> test2 = GetToHashSet(ss2);
+            Assert.IsTrue(test1.SetEquals(test2));
         }
+
+        [TestMethod]
+        public void SaveSmall()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            ss.SetContentsOfCell("a1", "text");
+            ss.SetContentsOfCell("b2", "7");
+            ss.SetContentsOfCell("c3", "=b2");
+            ss.Save(new StreamWriter(here));
+
+            Spreadsheet ss2 = new Spreadsheet(new StreamReader(here), matchAll);
+            ss2.Save(new StreamWriter(here2));
+            HashSet<string> test1 = GetToHashSet(ss);
+            HashSet<string> test2 = GetToHashSet(ss2);
+            Assert.IsTrue(test1.SetEquals(test2));
+        }
+        
+        // test Save with a different IsValid
+
+        // use this
+        //Spreadsheet ss = new Spreadsheet(new StreamReader(here), new Regex(".*"));
+        // REMEMBER THAT THIS WORKS
+        //XmlReader.Create(new StreamReader(here));
 
         #endregion
 

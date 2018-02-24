@@ -4,6 +4,7 @@ using Formulas;
 using Dependencies;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Xml;
 
 namespace SS
 {
@@ -130,11 +131,36 @@ namespace SS
         /// </summary>
         public Spreadsheet(TextReader source, Regex newIsValid) : this(newIsValid)
         {
-            // problem reading source --> IOEx
+            // problem reading source --> IOEx\
             // contents source =/= Spreadsheet.xsd --> SSReadEx
             // IsValid source bad Regex --> ssReadEx (else src IV --> "oldIsValid")
-            // todo: figure out where "oldIsValid" gets used, if anywhere
-            // ...
+            // duplicate cell name in src --> SReadEx
+            // invalid cell name/formula src --> SReadEx (use oldIsValid)
+            // invalid cell name/formula src --> SVerEx (use newIsValid)
+            // circ dependency --> SReadEx
+
+            List<string> cellNames = new List<string>();
+            List<string> cellContents = new List<string>();
+
+            using (XmlReader reader = XmlReader.Create(source))
+            {
+                while (reader.Read())
+                {
+                    if (reader.IsStartElement())
+                    {
+                        if (reader.GetAttribute(0) == "name")
+                        {
+                            SetContentsOfCell(reader.GetAttribute(0), reader.GetAttribute(1));
+                        }
+                    }
+                }
+            }
+            source.Close();
+
+            for (int i = 0; i < cellNames.Count; i++)
+            {
+                SetContentsOfCell(cellNames[i], cellContents[i]);
+            }
         }
 
         /// <summary>
@@ -169,7 +195,42 @@ namespace SS
         /// </summary>
         public override void Save(TextWriter dest)
         {
-            // todo: implement me
+            using (XmlWriter writer = XmlWriter.Create(dest))
+            {
+                writer.WriteStartDocument();
+                writer.WriteStartElement("spreadsheet");
+                writer.WriteAttributeString("IsValid", IsValid.ToString());
+
+                foreach (string name in cells.GetNamesOfAllNonemptyCells())
+                {
+                    object contents = cells.GetCellContents(name);
+
+                    if (contents is string)
+                    {
+                        contents = (string)contents;
+                    }
+                    else if (contents is double)
+                    {
+                        contents = contents.ToString();
+                    }
+                    else
+                    {
+                        contents = "=" + contents.ToString();
+                    }
+
+                    writer.WriteStartElement("cell");
+                    writer.WriteAttributeString("contents", (string)contents);
+                    writer.WriteAttributeString("name", name);
+                    writer.WriteEndElement();
+                }
+
+                writer.WriteEndElement();
+                writer.WriteEndDocument();
+            }
+            dest.Close();
+
+            // todo: "if there are any problems..." -- what kind of problems?
+
             Changed = false;
         }
 
@@ -281,30 +342,23 @@ namespace SS
 
             if (content.Length > 0)
             {
-                // if content is a number
                 if (Double.TryParse(content, out double number))
                 {
                     result = (HashSet<string>)SetCellContents(name, number);
                 }
-                // if content is a formula
-                // todo: make sure all the crap above gets fulfilled here (mostly thinking of errors)
                 else if (content[0] == '=')
                 {
-                    // todo: make sure that passing IsValidCellName as parameter works here
                     content = content.Remove(0, 1);
                     content = content.ToUpper();
 
                     Formula formula = new Formula(content, s => s.ToUpper(), IsValidCellName);
                     result = (HashSet<string>)SetCellContents(name, formula);
                 }
-                // content is a string
                 else
                 {
                     result = (HashSet<string>)SetCellContents(name, content);
                 }
             }
-            // if (content) is an empty string, we will delete the cell
-            // note: calling SetCellContents with (content) of "" removes cell (name) from cells
             else
             {
                 dependencies.ReplaceDependents(name, new HashSet<string>());
