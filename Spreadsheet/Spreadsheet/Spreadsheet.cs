@@ -131,35 +131,42 @@ namespace SS
         /// </summary>
         public Spreadsheet(TextReader source, Regex newIsValid) : this(newIsValid)
         {
-            // problem reading source --> IOEx\
-            // contents source =/= Spreadsheet.xsd --> SSReadEx
-            // IsValid source bad Regex --> ssReadEx (else src IV --> "oldIsValid")
-            // duplicate cell name in src --> SReadEx
-            // invalid cell name/formula src --> SReadEx (use oldIsValid)
-            // invalid cell name/formula src --> SVerEx (use newIsValid)
-            // circ dependency --> SReadEx
-
-            List<string> cellNames = new List<string>();
-            List<string> cellContents = new List<string>();
-
-            using (XmlReader reader = XmlReader.Create(source))
+            try
             {
-                while (reader.Read())
+                List<string> cellNames = new List<string>();
+                List<string> cellContents = new List<string>();
+
+                XmlReaderSettings settings = new XmlReaderSettings();
+                settings.Schemas.Add(AppDomain.CurrentDomain.BaseDirectory, "Spreadsheet.xsd");
+                settings.ValidationType = ValidationType.Schema;
+
+                using (XmlReader reader = XmlReader.Create(source))
                 {
-                    if (reader.IsStartElement())
+                    while (reader.Read())
                     {
-                        if (reader.GetAttribute(0) == "name")
+                        if (reader.IsStartElement())
                         {
-                            SetContentsOfCell(reader.GetAttribute(0), reader.GetAttribute(1));
+                            if (reader.AttributeCount == 2)
+                            {
+                                SetContentsOfCell(reader.GetAttribute("name"), reader.GetAttribute("contents"));
+                            }
                         }
                     }
                 }
-            }
-            source.Close();
+                source.Close();
 
-            for (int i = 0; i < cellNames.Count; i++)
+                for (int i = 0; i < cellNames.Count; i++)
+                {
+                    SetContentsOfCell(cellNames[i], cellContents[i]);
+                }
+            }
+            catch (XmlException)
             {
-                SetContentsOfCell(cellNames[i], cellContents[i]);
+                throw new IOException();
+            }
+            catch (System.Xml.Schema.XmlSchemaValidationException)
+            {
+                throw new SpreadsheetReadException("Spreadsheet did not meet schema definition.");
             }
         }
 
@@ -195,43 +202,50 @@ namespace SS
         /// </summary>
         public override void Save(TextWriter dest)
         {
-            using (XmlWriter writer = XmlWriter.Create(dest))
+            try
             {
-                writer.WriteStartDocument();
-                writer.WriteStartElement("spreadsheet");
-                writer.WriteAttributeString("IsValid", IsValid.ToString());
-
-                foreach (string name in cells.GetNamesOfAllNonemptyCells())
+                using (XmlWriter writer = XmlWriter.Create(dest))
                 {
-                    object contents = cells.GetCellContents(name);
+                    writer.WriteStartDocument();
+                    writer.WriteStartElement("spreadsheet");
+                    writer.WriteAttributeString("IsValid", IsValid.ToString());
 
-                    if (contents is string)
+                    foreach (string name in cells.GetNamesOfAllNonemptyCells())
                     {
-                        contents = (string)contents;
-                    }
-                    else if (contents is double)
-                    {
-                        contents = contents.ToString();
-                    }
-                    else
-                    {
-                        contents = "=" + contents.ToString();
+                        object contents = cells.GetCellContents(name);
+
+                        if (contents is string)
+                        {
+                            contents = (string)contents;
+                        }
+                        else if (contents is double)
+                        {
+                            contents = contents.ToString();
+                        }
+                        else
+                        {
+                            contents = "=" + contents.ToString();
+                        }
+
+                        writer.WriteStartElement("cell");
+                        writer.WriteAttributeString("contents", (string)contents);
+                        writer.WriteAttributeString("name", name);
+                        writer.WriteEndElement();
                     }
 
-                    writer.WriteStartElement("cell");
-                    writer.WriteAttributeString("contents", (string)contents);
-                    writer.WriteAttributeString("name", name);
                     writer.WriteEndElement();
+                    writer.WriteEndDocument();
                 }
+                dest.Close();
 
-                writer.WriteEndElement();
-                writer.WriteEndDocument();
+                // todo: "if there are any problems..." -- what kind of problems?
+
+                Changed = false;
             }
-            dest.Close();
-
-            // todo: "if there are any problems..." -- what kind of problems?
-
-            Changed = false;
+            catch
+            {
+                throw new IOException();
+            }
         }
 
         /// <summary>
@@ -699,17 +713,7 @@ namespace SS
         {
             foreach (string s in cells.Keys)
             {
-                if (cells[s].Contents.GetType() == typeof(string))
-                {
-                    if (cells[s].Contents != "")
-                    {
-                        yield return s;
-                    }
-                }
-                else
-                {
-                    yield return s;
-                }
+                yield return s;
             }
         }
     }
@@ -742,12 +746,12 @@ namespace SS
         /// 
         /// Note: set calls SetContent to make sure the object parameter is always an allowable type.
         /// </summary>
-        public object Contents
+        public dynamic Contents
         {
             get { return _contents; }
             set { SetContent(value); }
         }
-        private object _contents;
+        private dynamic _contents;
 
         /// <summary>
         /// The cell's value, which is initially evaluated at construction, but may be indirectly
@@ -768,11 +772,11 @@ namespace SS
         /// variable or on a division by zero, its value is a FormulaError.  Otherwise, its value
         /// is a double, as specified in Formula.Evaluate.
         /// </summary>
-        public object Value
+        public dynamic Value
         {
             get { return _value; }
         }
-        private object _value;
+        private dynamic _value;
 
         /// <summary>
         /// Initializes this cell, which will be named (name) and contain content (content).
@@ -781,7 +785,7 @@ namespace SS
         /// or Formula. However, this constructor still calls SetContent to make sure the object
         /// parameter is always an allowable type.
         /// </summary>
-        public Cell(object content, Formula.Lookup lookup)
+        public Cell(dynamic content, Formula.Lookup lookup)
         {
             SetContent(content);
             Evaluate(lookup);
@@ -793,7 +797,7 @@ namespace SS
         /// The contents of a cell can be (1) a string, (2) a double, or (3) a Formula.  If the
         /// contents is an empty string, we say that the cell is empty.
         /// </summary>
-        private void SetContent(object content)
+        private void SetContent(dynamic content)
         {
             if (content is string || content is double || content is Formula)
             {
@@ -827,22 +831,22 @@ namespace SS
         {
             if (_contents is Formula)
             {
-                // todo: make this look nicer
-                Formula temp = (Formula)_contents;
                 try
                 {
-                    double temp2 = temp.Evaluate(lookup);
-                    _value = temp2;
+                    _value = _contents.Evaluate(lookup);
                 }
                 catch (FormulaEvaluationException)
                 {
-                    // todo: give reason?
-                    _value = new FormulaError();
+                    _value = new FormulaError("Formula could not be evaluated.");
                 }
             }
-            else //_contents is string or double
+            else if (_contents is string || _contents is double)
             {
                 _value = _contents;
+            }
+            else
+            {
+                throw new Microsoft.CSharp.RuntimeBinder.RuntimeBinderException();
             }
         }
     }
