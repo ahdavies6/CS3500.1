@@ -130,7 +130,11 @@ namespace SS
         /// </summary>
         public Spreadsheet(TextReader source, Regex newIsValid) : this(newIsValid)
         {
-            // todo: implement me
+            // problem reading source --> IOEx
+            // contents source =/= Spreadsheet.xsd --> SSReadEx
+            // IsValid source bad Regex --> ssReadEx (else src IV --> "oldIsValid")
+            // todo: figure out where "oldIsValid" gets used, if anywhere
+            // ...
         }
 
         /// <summary>

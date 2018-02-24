@@ -462,9 +462,10 @@ namespace SpreadsheetTests
         [ExpectedException(typeof(FormulaFormatException))]
         public void DependentRegexInvalid1()
         {
-            Spreadsheet ss = new Spreadsheet(new Regex("[^b]"));
-            ss.SetContentsOfCell("longname1", "=b1");
+            Spreadsheet ss = new Spreadsheet(new Regex("^B"));
+            ss.SetContentsOfCell("B1", "=a1");
         }
+
         [TestMethod]
         [ExpectedException(typeof(FormulaFormatException))]
         public void DependentRegexInvalid2()
@@ -477,7 +478,7 @@ namespace SpreadsheetTests
         [TestMethod]
         public void RegexCatch()
         {
-            Spreadsheet ss = new Spreadsheet(new Regex("^[^b]*$"));
+            Spreadsheet ss = new Spreadsheet(new Regex("^[^B]*$"));
             ss.SetContentsOfCell("a1", "b");
             ss.SetContentsOfCell("longName1", "0");
             try
@@ -485,11 +486,11 @@ namespace SpreadsheetTests
                 ss.SetContentsOfCell("longname2", "=b1");
                 throw new Exception();
             }
-            catch (InvalidNameException)
+            catch (FormulaFormatException)
             {
                 ss.SetContentsOfCell("longname2", "=longname1");
             }
-            Assert.IsInstanceOfType(ss.GetCellValue("longname2"), typeof(FormulaError));
+            Assert.AreEqual((double)0, ss.GetCellValue("longname2"));
         }
 
         [TestMethod]
@@ -770,7 +771,7 @@ namespace SpreadsheetTests
         [TestMethod]
         public void Save()
         {
-
+            Spreadsheet ss = new Spreadsheet();
         }
 
         #endregion
