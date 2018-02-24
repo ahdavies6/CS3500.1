@@ -187,7 +187,7 @@ namespace SS
         {
             if (name != null)
             {
-                return Regex.IsMatch(name.ToUpper(), validCellNamePattern) && IsValid.IsMatch(name);
+                return Regex.IsMatch(name.ToUpper(), validCellNamePattern) && IsValid.IsMatch(name.ToUpper());
             }
             else
             {

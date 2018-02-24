@@ -454,8 +454,48 @@ namespace SpreadsheetTests
         [ExpectedException(typeof(InvalidNameException))]
         public void SetNameRegexInvalid3()
         {
-            Spreadsheet ss = new Spreadsheet(new Regex("[cde]{,2}"));
-            ss.SetContentsOfCell("deck1", "a");
+            Spreadsheet ss = new Spreadsheet(new Regex("d{,2}"));
+            ss.SetContentsOfCell("an1", "a");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void DependentRegexInvalid1()
+        {
+            Spreadsheet ss = new Spreadsheet(new Regex("[^b]"));
+            ss.SetContentsOfCell("longname1", "=b1");
+        }
+        [TestMethod]
+        [ExpectedException(typeof(FormulaFormatException))]
+        public void DependentRegexInvalid2()
+        {
+            Spreadsheet ss = new Spreadsheet(new Regex(".{3,}"));
+            ss.SetContentsOfCell("ABC2", "=b4");
+        }
+
+
+        [TestMethod]
+        public void RegexCatch()
+        {
+            Spreadsheet ss = new Spreadsheet(new Regex("^[^b]*$"));
+            ss.SetContentsOfCell("a1", "b");
+            ss.SetContentsOfCell("longName1", "0");
+            try
+            {
+                ss.SetContentsOfCell("longname2", "=b1");
+                throw new Exception();
+            }
+            catch (InvalidNameException)
+            {
+                ss.SetContentsOfCell("longname2", "=longname1");
+            }
+            Assert.IsInstanceOfType(ss.GetCellValue("longname2"), typeof(FormulaError));
+        }
+
+        [TestMethod]
+        public void RegexTest()
+        {
+            Assert.IsFalse(Regex.IsMatch("b1", "^[^b]*$"));
         }
 
         [TestMethod]
@@ -725,6 +765,12 @@ namespace SpreadsheetTests
             Assert.IsTrue(ss.Changed);
             ss.Save(new StreamWriter(here));
             Assert.IsFalse(ss.Changed);
+        }
+
+        [TestMethod]
+        public void Save()
+        {
+
         }
 
         #endregion
