@@ -772,7 +772,7 @@ namespace SpreadsheetTests
 
         #endregion
 
-        #region Constructor(TextReader, Regex) Tests
+        #region Constructor(TextReader, Regex) Exceptions
 
         [TestMethod]
         [ExpectedException(typeof(IOException))]
@@ -827,7 +827,7 @@ namespace SpreadsheetTests
 
         #endregion
 
-        #region Save Tests
+        #region Save, Constructor(TextReader, Regex) Tests
 
         /// <summary>
         /// Helper method returns a HashSet with all the cell names in Spreadsheet (ss).
