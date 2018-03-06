@@ -622,74 +622,74 @@ namespace SpreadsheetTests
             Assert.IsTrue(ObjectsAreEqual(ss.GetCellValue("a1"), ss.GetCellValue("a2")));
         }
 
-        //[TestMethod]
-        //public void GetValueFormulaComplex()
-        //{
-        //    Spreadsheet ss = new Spreadsheet();
-        //    Assert.IsTrue(ObjectsAreEqual("", ss.GetCellValue("a1")));
-        //    Assert.IsTrue(ObjectsAreEqual(ss.GetCellValue("a200"), ss.GetCellValue("d11")));
-        //    ss.SetContentsOfCell("A1", "=b1");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("a1")));
-        //    ss.SetContentsOfCell("B1", "6");
-        //    Assert.IsTrue(ObjectsAreEqual(6, ss.GetCellValue("a1")));
-        //    ss.SetContentsOfCell("b1", "e");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
-        //    ss.SetContentsOfCell("b1", "70.0");
-        //    Assert.IsTrue(ObjectsAreEqual(70, ss.GetCellValue("A1")));
-        //    ss.SetContentsOfCell("b1", "=c2");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
-        //    ss.SetContentsOfCell("b1", "");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
-        //    ss.SetContentsOfCell("a1", "done");
-        //    Assert.IsTrue(ObjectsAreEqual("done", ss.GetCellValue("A1")));
+        [TestMethod]
+        public void GetValueFormulaComplex()
+        {
+            Spreadsheet ss = new Spreadsheet();
+            Assert.IsTrue(ObjectsAreEqual("", ss.GetCellValue("a1")));
+            Assert.IsTrue(ObjectsAreEqual(ss.GetCellValue("a200"), ss.GetCellValue("d11")));
+            ss.SetContentsOfCell("A1", "=b1");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("a1")));
+            ss.SetContentsOfCell("B1", "6");
+            Assert.IsTrue(ObjectsAreEqual(6, ss.GetCellValue("a1")));
+            ss.SetContentsOfCell("b1", "e");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("b1", "70.0");
+            Assert.IsTrue(ObjectsAreEqual(70, ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("b1", "=c2");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("b1", "");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("a1", "done");
+            Assert.IsTrue(ObjectsAreEqual("done", ss.GetCellValue("A1")));
 
-        //    ss = new Spreadsheet();
-        //    ss.SetContentsOfCell("a1", "=6/z9");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
-        //    HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("z9", "2");
-        //    Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9" }));
-        //    Assert.IsTrue(ObjectsAreEqual(3, ss.GetCellValue("A1")));
+            ss = new Spreadsheet();
+            ss.SetContentsOfCell("a1", "=6/z9");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            HashSet<string> test = (HashSet<string>)ss.SetContentsOfCell("z9", "2");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9" }));
+            Assert.IsTrue(ObjectsAreEqual(3, ss.GetCellValue("A1")));
 
-        //    ss.SetContentsOfCell("z9", "0");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
-        //    ss.SetContentsOfCell("z9", "=c4");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
-        //    test = (HashSet<string>)ss.SetContentsOfCell("c4", "3");
-        //    Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4" }));
-        //    Assert.IsTrue(ObjectsAreEqual(2, ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("z9", "0");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("z9", "=c4");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            test = (HashSet<string>)ss.SetContentsOfCell("c4", "3");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4" }));
+            Assert.IsTrue(ObjectsAreEqual(2, ss.GetCellValue("A1")));
 
-        //    ss.SetContentsOfCell("c4", "0");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
-        //    ss.SetContentsOfCell("c4", "=e11");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
-        //    test = (HashSet<string>)ss.SetContentsOfCell("e11", "=p62");
-        //    Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11" }));
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("c4", "0");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("c4", "=e11");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            test = (HashSet<string>)ss.SetContentsOfCell("e11", "=p62");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11" }));
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
 
-        //    test = (HashSet<string>)ss.SetContentsOfCell("p62", "6");
-        //    Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11", "P62" }));
-        //    Assert.IsTrue(ObjectsAreEqual(1, ss.GetCellValue("A1")));
+            test = (HashSet<string>)ss.SetContentsOfCell("p62", "6");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11", "P62" }));
+            Assert.IsTrue(ObjectsAreEqual(1, ss.GetCellValue("A1")));
 
-        //    ss.SetContentsOfCell("p62", "= p60 - p61");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
-        //    test = (HashSet<string>)ss.SetContentsOfCell("p60", "0");
-        //    Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11", "P62", "P60" }));
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("p62", "= p60 - p61");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            test = (HashSet<string>)ss.SetContentsOfCell("p60", "0");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11", "P62", "P60" }));
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
 
-        //    test = (HashSet<string>)ss.SetContentsOfCell("p61", "1");
-        //    Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11", "P62", "P61" }));
-        //    Assert.IsTrue(ObjectsAreEqual(-6, ss.GetCellValue("A1")));
+            test = (HashSet<string>)ss.SetContentsOfCell("p61", "1");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "A1", "Z9", "C4", "E11", "P62", "P61" }));
+            Assert.IsTrue(ObjectsAreEqual(-6, ss.GetCellValue("A1")));
 
-        //    ss.SetContentsOfCell("p62", "= p60 - p61 + 1");
-        //    Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
+            ss.SetContentsOfCell("p62", "= p60 - p61 + 1");
+            Assert.IsTrue(ObjectsAreEqual(new FormulaError(), ss.GetCellValue("A1")));
 
-        //    ss.SetContentsOfCell("a1", "=c4");
-        //    test = (HashSet<string>)ss.SetContentsOfCell("c4", "");
-        //    Assert.IsTrue(test.SetEquals(new HashSet<string>() { "C4" }));
+            ss.SetContentsOfCell("a1", "=c4");
+            test = (HashSet<string>)ss.SetContentsOfCell("c4", "");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "C4" }));
 
-        //    test = (HashSet<string>)ss.SetContentsOfCell("e11", "");
-        //    Assert.IsTrue(test.SetEquals(new HashSet<string>() { "E11" }));
-        //}
+            test = (HashSet<string>)ss.SetContentsOfCell("e11", "");
+            Assert.IsTrue(test.SetEquals(new HashSet<string>() { "E11" }));
+        }
 
         /// <summary>
         /// Helper method checks if (expected) and (actual) are, after proper casting, equivalent.
