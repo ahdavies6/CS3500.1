@@ -142,7 +142,22 @@ namespace SS
                 Regex oldIsValid;
                 foreach (Tuple<string, string> cell in ReadInSpreadsheet(source, settings, out oldIsValid))
                 {
-                    SetContentsOfCell(cell.Item1, cell.Item2);
+                    //if ((string)GetCellContents(cell.Item1) != "")
+                    //if ((string)cells.GetCellContents()
+                    //{
+                    //    throw new SpreadsheetReadException("Source contains duplicate cell names.");
+                    //}
+                    try
+                    {
+                        if ((string)cells.GetCellContents(cell.Item1) == "")
+                        {
+                            throw new SpreadsheetReadException("Source contains duplicate cell names.");
+                        }
+                    }
+                    finally
+                    {
+                        SetContentsOfCell(cell.Item1, cell.Item2);
+                    }
                 }
             }
             catch (InvalidNameException)
