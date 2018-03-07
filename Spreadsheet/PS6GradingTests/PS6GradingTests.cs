@@ -897,35 +897,35 @@ namespace PS6GradingTests
             MediumSave();
         }
 
-        [TestMethod()]
-        public void LongTestWithTimeout3()
-        {
-            TestWithTimeout(LongTest, 3);
-        }
+        //[TestMethod()]
+        //public void LongTestWithTimeout3()
+        //{
+        //    TestWithTimeout(LongTest, 3);
+        //}
 
-        [TestMethod()]
-        public void LongTestWithTimeout6()
-        {
-            TestWithTimeout(LongTest, 6);
-        }
+        //[TestMethod()]
+        //public void LongTestWithTimeout6()
+        //{
+        //    TestWithTimeout(LongTest, 6);
+        //}
 
-        [TestMethod()]
-        public void LongTestWithTimeout9()
-        {
-            TestWithTimeout(LongTest, 9);
-        }
+        //[TestMethod()]
+        //public void LongTestWithTimeout9()
+        //{
+        //    TestWithTimeout(LongTest, 9);
+        //}
 
-        [TestMethod()]
-        public void LongTestWithTimeout12()
-        {
-            TestWithTimeout(LongTest, 12);
-        }
+        //[TestMethod()]
+        //public void LongTestWithTimeout12()
+        //{
+        //    TestWithTimeout(LongTest, 12);
+        //}
 
-        [TestMethod()]
-        public void LongTestWithTimeout15()
-        {
-            TestWithTimeout(LongTest, 15);
-        }
+        //[TestMethod()]
+        //public void LongTestWithTimeout15()
+        //{
+        //    TestWithTimeout(LongTest, 15);
+        //}
 
         public void LongTest()
         {
@@ -946,6 +946,8 @@ namespace PS6GradingTests
             s.SetContentsOfCell("a" + (i + 1), "0");
             Assert.AreEqual(0.0, (double)s.GetCellValue("sum1"), 0.1);
         }
+
+        
 
         // Regression tests from PS5GradingTests
 
@@ -1007,11 +1009,11 @@ namespace PS6GradingTests
             TestWithTimeout(Stress1, 1);
         }
 
-        [TestMethod()]
-        public void Stress1WithTimeout2()
-        {
-            TestWithTimeout(Stress1, 2);
-        }
+        //[TestMethod()]
+        //public void Stress1WithTimeout2()
+        //{
+        //    TestWithTimeout(Stress1, 2);
+        //}
 
         public void Stress1()
         {
@@ -1035,138 +1037,138 @@ namespace PS6GradingTests
             Assert.IsTrue(cells.SetEquals(new HashSet<string>() { "A1", "B1", "B2", "C1", "C2", "C3", "C4", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "E1" }));
         }
 
-        [TestMethod()]
-        public void Stress2WithTimeout10()
-        {
-            TestWithTimeout(Stress2, 10);
-        }
+        //[TestMethod()]
+        //public void Stress2WithTimeout10()
+        //{
+        //    TestWithTimeout(Stress2, 10);
+        //}
 
-        [TestMethod()]
-        public void Stress2WithTimeout20()
-        {
-            TestWithTimeout(Stress2, 10);
-        }
+        //[TestMethod()]
+        //public void Stress2WithTimeout20()
+        //{
+        //    TestWithTimeout(Stress2, 10);
+        //}
 
-        public void Stress2()
-        {
-            AbstractSpreadsheet s = new Spreadsheet();
-            ISet<String> cells = new HashSet<string>();
-            for (int i = 1; i < 200; i++)
-            {
-                cells.Add("A" + i);
-                Assert.IsTrue(cells.SetEquals(s.SetContentsOfCell("A" + i, "=A" + (i + 1))));
-            }
-        }
+        //public void Stress2()
+        //{
+        //    AbstractSpreadsheet s = new Spreadsheet();
+        //    ISet<String> cells = new HashSet<string>();
+        //    for (int i = 1; i < 200; i++)
+        //    {
+        //        cells.Add("A" + i);
+        //        Assert.IsTrue(cells.SetEquals(s.SetContentsOfCell("A" + i, "=A" + (i + 1))));
+        //    }
+        //}
 
-        [TestMethod()]
-        public void Stress3WithTimeout10()
-        {
-            TestWithTimeout(Stress3, 10);
-        }
+        //[TestMethod()]
+        //public void Stress3WithTimeout10()
+        //{
+        //    TestWithTimeout(Stress3, 10);
+        //}
 
-        [TestMethod()]
-        public void Stress3WithTimeout20()
-        {
-            TestWithTimeout(Stress3, 20);
-        }
+        //[TestMethod()]
+        //public void Stress3WithTimeout20()
+        //{
+        //    TestWithTimeout(Stress3, 20);
+        //}
 
-        public void Stress3()
-        {
-            AbstractSpreadsheet s = new Spreadsheet();
-            for (int i = 1; i < 200; i++)
-            {
-                s.SetContentsOfCell("A" + i, "=A" + (i + 1));
-            }
-            try
-            {
-                s.SetContentsOfCell("A150", "=A50");
-                Assert.Fail();
-            }
-            catch (CircularException)
-            {
-            }
-        }
+        //public void Stress3()
+        //{
+        //    AbstractSpreadsheet s = new Spreadsheet();
+        //    for (int i = 1; i < 200; i++)
+        //    {
+        //        s.SetContentsOfCell("A" + i, "=A" + (i + 1));
+        //    }
+        //    try
+        //    {
+        //        s.SetContentsOfCell("A150", "=A50");
+        //        Assert.Fail();
+        //    }
+        //    catch (CircularException)
+        //    {
+        //    }
+        //}
 
-        [TestMethod()]
-        public void Stress4WithTimeout10()
-        {
-            TestWithTimeout(Stress4, 10);
-        }
+        //[TestMethod()]
+        //public void Stress4WithTimeout10()
+        //{
+        //    TestWithTimeout(Stress4, 10);
+        //}
 
-        [TestMethod()]
-        public void Stress4WithTimeout20()
-        {
-            TestWithTimeout(Stress4, 20);
-        }
+        //[TestMethod()]
+        //public void Stress4WithTimeout20()
+        //{
+        //    TestWithTimeout(Stress4, 20);
+        //}
 
-        public void Stress4()
-        {
-            int SIZE = 200;
+        //public void Stress4()
+        //{
+        //    int SIZE = 200;
 
-            AbstractSpreadsheet s = new Spreadsheet();
-            for (int i = 0; i < SIZE; i++)
-            {
-                s.SetContentsOfCell("A1" + i, "=A1" + (i + 1));
-            }
+        //    AbstractSpreadsheet s = new Spreadsheet();
+        //    for (int i = 0; i < SIZE; i++)
+        //    {
+        //        s.SetContentsOfCell("A1" + i, "=A1" + (i + 1));
+        //    }
 
-            ISet<string> sss = s.SetContentsOfCell("A1" + (SIZE-1), "25.0");
-            Assert.AreEqual(SIZE, sss.Count);
-            for (int i = 0; i < SIZE; i++)
-            {
-                Assert.IsTrue(sss.Contains("A1" + i));
-            }
+        //    ISet<string> sss = s.SetContentsOfCell("A1" + (SIZE-1), "25.0");
+        //    Assert.AreEqual(SIZE, sss.Count);
+        //    for (int i = 0; i < SIZE; i++)
+        //    {
+        //        Assert.IsTrue(sss.Contains("A1" + i));
+        //    }
 
-            sss = s.SetContentsOfCell("A1" + (SIZE/2-1), "25.0");
-            Assert.AreEqual(SIZE/2, sss.Count);
-            for (int i = 0; i < SIZE/2; i++)
-            {
-                Assert.IsTrue(sss.Contains("A1" + i));
-            }
-        }
+        //    sss = s.SetContentsOfCell("A1" + (SIZE/2-1), "25.0");
+        //    Assert.AreEqual(SIZE/2, sss.Count);
+        //    for (int i = 0; i < SIZE/2; i++)
+        //    {
+        //        Assert.IsTrue(sss.Contains("A1" + i));
+        //    }
+        //}
 
-        [TestMethod()]
-        public void Stress5WithTimeout10()
-        {
-            TestWithTimeout(Stress5, 10);
-        }
+        //[TestMethod()]
+        //public void Stress5WithTimeout10()
+        //{
+        //    TestWithTimeout(Stress5, 10);
+        //}
 
-        [TestMethod()]
-        public void Stress5WithTimeout20()
-        {
-            TestWithTimeout(Stress5, 20);
-        }
+        //[TestMethod()]
+        //public void Stress5WithTimeout20()
+        //{
+        //    TestWithTimeout(Stress5, 20);
+        //}
 
-        public void Stress5()
-        {
-            int seed = 47;
-            int size = 831;
-            AbstractSpreadsheet s = new Spreadsheet();
-            Random rand = new Random(seed);
-            for (int i = 0; i < 1000; i++)
-            {
-                try
-                {
-                    switch (rand.Next(3))
-                    {
-                        case 0:
-                            s.SetContentsOfCell(randomName(rand), "3.14");
-                            break;
-                        case 1:
-                            s.SetContentsOfCell(randomName(rand), "hello");
-                            break;
-                        case 2:
-                            s.SetContentsOfCell(randomName(rand), "=" + randomFormula(rand));
-                            break;
-                    }
-                }
-                catch (CircularException)
-                {
-                }
-            }
-            ISet<string> set = new HashSet<string>(s.GetNamesOfAllNonemptyCells());
-            //return size == set.Count;
-            Assert.AreEqual(size, set.Count);
-        }
+        //public void Stress5()
+        //{
+        //    int seed = 47;
+        //    int size = 831;
+        //    AbstractSpreadsheet s = new Spreadsheet();
+        //    Random rand = new Random(seed);
+        //    for (int i = 0; i < 1000; i++)
+        //    {
+        //        try
+        //        {
+        //            switch (rand.Next(3))
+        //            {
+        //                case 0:
+        //                    s.SetContentsOfCell(randomName(rand), "3.14");
+        //                    break;
+        //                case 1:
+        //                    s.SetContentsOfCell(randomName(rand), "hello");
+        //                    break;
+        //                case 2:
+        //                    s.SetContentsOfCell(randomName(rand), "=" + randomFormula(rand));
+        //                    break;
+        //            }
+        //        }
+        //        catch (CircularException)
+        //        {
+        //        }
+        //    }
+        //    ISet<string> set = new HashSet<string>(s.GetNamesOfAllNonemptyCells());
+        //    //return size == set.Count;
+        //    Assert.AreEqual(size, set.Count);
+        //}
 
         private String randomName(Random rand)
         {
@@ -1206,5 +1208,33 @@ namespace PS6GradingTests
             return f;
         }
 
+        #region MyStress
+
+        //[TestMethod]
+        //public void MyStress()
+        //{
+        //    LongTest(10);
+        //}
+
+        //public void LongTest(int depth)
+        //{
+        //    AbstractSpreadsheet s = new Spreadsheet();
+        //    s.SetContentsOfCell("sum1", "= a1 + a2");
+        //    int i;
+        //    for (i = 1; i <= depth * 2; i += 2)
+        //    {
+        //        s.SetContentsOfCell("a" + i, "= a" + (i + 2) + " + a" + (i + 3));
+        //        s.SetContentsOfCell("a" + (i + 1), "= a" + (i + 2) + "+ a" + (i + 3));
+        //    }
+        //    s.SetContentsOfCell("a" + i, "1");
+        //    s.SetContentsOfCell("a" + (i + 1), "1");
+        //    Assert.AreEqual(Math.Pow(2, depth + 1), (double)s.GetCellValue("sum1"), 1e20);
+        //    s.SetContentsOfCell("a" + i, "0");
+        //    Assert.AreEqual(Math.Pow(2, depth), (double)s.GetCellValue("sum1"), 1e20);
+        //    s.SetContentsOfCell("a" + (i + 1), "0");
+        //    Assert.AreEqual(0.0, (double)s.GetCellValue("sum1"), 0.1);
+        //}
+
+        #endregion
     }
 }

@@ -5,6 +5,7 @@ using Dependencies;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Xml;
+using System.Xml.Schema;
 
 namespace SS
 {
@@ -101,9 +102,6 @@ namespace SS
         /// <summary>
         /// Creates a Spreadsheet that is a duplicate of the spreadsheet saved in source.
         ///
-        /// See the AbstractSpreadsheet.Save method and Spreadsheet.xsd for the file format 
-        /// specification.  
-        ///
         /// If there's a problem reading source, throws an IOException.
         ///
         /// Else if the contents of source are not consistent with the schema in Spreadsheet.xsd, 
@@ -133,41 +131,71 @@ namespace SS
         {
             try
             {
-                List<string> cellNames = new List<string>();
-                List<string> cellContents = new List<string>();
-
-                XmlReaderSettings settings = new XmlReaderSettings();
-                settings.Schemas.Add(AppDomain.CurrentDomain.BaseDirectory, "Spreadsheet.xsd");
-                settings.ValidationType = ValidationType.Schema;
-
-                using (XmlReader reader = XmlReader.Create(source))
+                // schema validation
+                XmlReaderSettings settings = new XmlReaderSettings { ValidationType = ValidationType.Schema };
+                settings.Schemas.Add(null, "Spreadsheet.xsd");
+                settings.ValidationEventHandler += (object o, ValidationEventArgs v) =>
                 {
-                    while (reader.Read())
-                    {
-                        if (reader.IsStartElement())
-                        {
-                            if (reader.AttributeCount == 2)
-                            {
-                                SetContentsOfCell(reader.GetAttribute("name"), reader.GetAttribute("contents"));
-                            }
-                        }
-                    }
+                    throw new SpreadsheetReadException(v.Message);
+                };
+
+                Regex oldIsValid;
+                foreach (Tuple<string, string> cell in ReadInSpreadsheet(source, settings, out oldIsValid))
+                {
+                    SetContentsOfCell(cell.Item1, cell.Item2);
                 }
-                source.Close();
 
-                for (int i = 0; i < cellNames.Count; i++)
+                if (oldIsValid == null)
                 {
-                    SetContentsOfCell(cellNames[i], cellContents[i]);
+                    throw new SpreadsheetReadException("Source's IsValid is not a valid C# regular expression.");
                 }
             }
             catch (XmlException)
             {
                 throw new IOException();
             }
-            catch (System.Xml.Schema.XmlSchemaValidationException)
+            catch (XmlSchemaValidationException)
             {
-                throw new SpreadsheetReadException("Spreadsheet did not meet schema definition.");
+                throw new SpreadsheetReadException("Source does not meet schema definition.");
             }
+        }
+
+        /// <summary>
+        /// Private helper method goes inside public wrapper method. Reads contents of (source)
+        /// according to (settings), and raises exceptions if the contents of (source) do not
+        /// meet specifications. Returns Regex IsValid from (source).
+        /// </summary>
+        private HashSet<Tuple<string, string>> ReadInSpreadsheet
+            (TextReader source, XmlReaderSettings settings, out Regex oldIsValid)
+        {
+            HashSet<Tuple<string, string>> cells = new HashSet<Tuple<string, string>>();
+            oldIsValid = null;
+
+            using (XmlReader reader = XmlReader.Create(source, settings))
+            {
+                while (reader.Read())
+                {
+                    if (reader.IsStartElement())
+                    {
+                        if (reader.AttributeCount == 1)
+                        {
+                            oldIsValid = new Regex(reader.GetAttribute("IsValid"));
+                        }
+
+                        if (reader.AttributeCount == 2)
+                        {
+                            //SetContentsOfCell(reader.GetAttribute("name"), reader.GetAttribute("contents"));
+                            //yield return new Tuple<string, string>
+                            //    (reader.GetAttribute("name"), reader.GetAttribute("contents"));
+                            cells.Add(new Tuple<string, string>
+                                (reader.GetAttribute("name"), reader.GetAttribute("contents")));
+                        }
+                    }
+                }
+            }
+
+            source.Close();
+            return cells;
         }
 
         /// <summary>
