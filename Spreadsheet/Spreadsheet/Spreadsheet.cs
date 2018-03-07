@@ -144,11 +144,14 @@ namespace SS
                 {
                     SetContentsOfCell(cell.Item1, cell.Item2);
                 }
-
-                if (oldIsValid == null)
-                {
-                    throw new SpreadsheetReadException("Source's IsValid is not a valid C# regular expression.");
-                }
+            }
+            catch (InvalidNameException)
+            {
+                throw new SpreadsheetVersionException("Source contains cell that does not match newIsValid.");
+            }
+            catch (ArgumentException)
+            {
+                throw new SpreadsheetReadException("Source's IsValid is not a valid C# regular expression.");
             }
             catch (XmlException)
             {
