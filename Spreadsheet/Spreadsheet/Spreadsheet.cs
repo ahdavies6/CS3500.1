@@ -139,17 +139,18 @@ namespace SS
                     throw new SpreadsheetReadException(v.Message);
                 };
 
-                Regex oldIsValid;
-                foreach (Tuple<string, string> cell in ReadInSpreadsheet(source, settings, out oldIsValid))
+                foreach (Tuple<string, string> cell in ReadInSpreadsheet(source, settings, out Regex oldIsValid))
                 {
-                    //if ((string)GetCellContents(cell.Item1) != "")
-                    //if ((string)cells.GetCellContents()
-                    //{
-                    //    throw new SpreadsheetReadException("Source contains duplicate cell names.");
-                    //}
                     try
                     {
-                        if ((string)cells.GetCellContents(cell.Item1) == "")
+                        string name = cell.Item1;
+
+                        if (!oldIsValid.IsMatch(name))
+                        {
+                            throw new SpreadsheetReadException
+                                ("Source contains cell that does not match source's IsValid.");
+                        }
+                        if ((string)GetCellContents(name) != "")
                         {
                             throw new SpreadsheetReadException("Source contains duplicate cell names.");
                         }
